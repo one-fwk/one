@@ -1,6 +1,6 @@
 {
   "name": "@one/core",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "",
   "main": "lib/index.js",
   "typings": "./lib/index.d.ts",
@@ -43,5 +43,6 @@
     "testMatch": [
       "<rootDir>/__tests__/**/*.(spec|test).+(ts|tsx)"
     ]
-  }
+  },
+  "gitHead": "9c1512e1a8a4d3becb74caa42908c56163002982"
 }
