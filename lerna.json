@@ -2,6 +2,7 @@
   "lerna": "2.2.0",
   "command": {
     "publish": {
+      "npmClient": "yarn",
       "ignoreChanges": ["packages/*/__tests__/**"]
     }
   },
