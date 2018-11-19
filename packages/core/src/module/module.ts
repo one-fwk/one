@@ -88,6 +88,7 @@ export class OneModule {
 
   public getProviders() {
     return [
+      Injector,
       ...this.injectables.values(),
       ...this.getRelatedProviders().values(),
     ];
@@ -171,7 +172,7 @@ export class OneModule {
     );
 
     this.created.resolve();
-    console.log(this.target.name, 'created');
+    // console.log(this.target.name, 'created');
   }
 
   private getProviderType(provider: Provider) {
