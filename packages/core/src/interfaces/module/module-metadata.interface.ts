@@ -1,7 +1,7 @@
+import { InjectionToken } from '../../module';
 import { DynamicModule } from './dynamic-module.interface';
 import { ForwardRef } from '../forward-ref.interface';
 import { Provider } from '../provider.interface';
-import { InjectionToken } from '../../module';
 import { Type } from '../type.interface';
 
 export type ModuleExport = Provider | DynamicModule;

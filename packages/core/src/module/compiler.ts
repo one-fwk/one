@@ -1,8 +1,8 @@
+import { DynamicModule, Type, ModuleFactory } from '../interfaces';
 import { ModuleTokenFactory } from './module-token-factory';
 import { Registry } from '../registry';
 import { OneModule } from './module';
 import { Utils } from '../util';
-import { DynamicModule, Type, ModuleFactory } from '../interfaces';
 
 export type ModuleCompile = Type<any> | Promise<DynamicModule> | DynamicModule;
 

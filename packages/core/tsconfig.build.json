@@ -4,5 +4,5 @@
     "rootDir": "src",
     "outDir": "lib"
   },
-  "exclude": ["lib", "coverage", "__tests__"]
+  "exclude": ["lib", "coverage", "*test"]
 }

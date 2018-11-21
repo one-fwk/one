@@ -1,16 +1,19 @@
 import { Scanner, OneContainer, OneModule, InjectionToken } from './module';
-import { APP_INIT, APP_DESTROY } from './tokens';
 import { ExceptionsZone, MissingInjectionTokenException } from './errors';
 import { Registry } from './registry';
-import { Type } from './interfaces';
 import { Utils } from './util';
+import { APP_INIT, APP_DESTROY } from './tokens';
+import { FactoryOptions, Type } from './interfaces';
 
 // @TODO: Figure out why <https://github.com/inversify/InversifyJS/blob/master/wiki/hierarchical_di.md> doesn't work
 export class OneFactory {
   public readonly container = new OneContainer();
   public readonly scanner = new Scanner(this.container);
 
-  constructor(private readonly module: Type<any>) {}
+  constructor(
+    private readonly module: Type<any>,
+    private readonly options: FactoryOptions = {},
+  ) {}
 
   public async start() {
     await ExceptionsZone.run(async () => {

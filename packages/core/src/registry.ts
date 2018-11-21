@@ -1,7 +1,3 @@
-import {
-  CircularDependencyException,
-  InvalidProviderException,
-} from './errors';
 import { InjectionToken } from './module';
 import { Reflector } from './reflector';
 import { Utils } from './util';
@@ -20,6 +16,10 @@ import {
   Token,
   ModuleExport,
 } from './interfaces';
+import {
+  CircularDependencyException,
+  InvalidProviderException,
+} from './errors';
 
 export class Registry {
   public static readonly lazyInjects = new Set<ILazyInject>();

@@ -1,5 +1,6 @@
-import 'reflect-metadata';
-import { Injectable, Module, ModuleCompiler, Registry } from '@one/core';
+import { Injectable, Module } from '@one/core';
+import { ModuleCompiler } from '../compiler';
+import { Registry } from '../../registry';
 
 describe('ModuleCompiler', () => {
   let compiler: ModuleCompiler;

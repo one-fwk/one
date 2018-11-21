@@ -4,6 +4,7 @@ import { Reflector } from '../reflector';
 import { Registry } from '../registry';
 import { OneModule } from './module';
 import { Utils } from '../util';
+import { Metadata } from '../constants';
 import {
   UnknownModuleException,
   InvalidModuleException,
@@ -94,9 +95,8 @@ export class OneContainer {
     const token = Registry.getProviderToken(provider);
 
     return Utils.flatten<T | Promise<Type<Provider>>>(
-      this.getModulesFrom(target).map(
-        ({ providers }) =>
-          providers.isBound(token) ? providers.getAll(token) : [],
+      this.getModulesFrom(target).map(({ providers }) =>
+        providers.isBound(token) ? providers.getAll(token) : [],
       ),
     );
   }
@@ -162,7 +162,10 @@ export class OneContainer {
 
     const modules = Utils.concat(scope, target);
     this.addDynamicMetadata(token, dynamicMetadata!, modules);
-    Reflector.isGlobalModule(target) && this.addGlobalModule(oneModule);
+
+    if (Reflector.isGlobalModule(target)) {
+      this.addGlobalModule(oneModule);
+    }
   }
 
   private addDynamicMetadata(
@@ -199,7 +202,10 @@ export class OneContainer {
   }
 
   public async addImport(relatedModule: Partial<ModuleImport>, token: string) {
-    if (!this.modules.has(token)) return;
+    if (!this.modules.has(token)) {
+      console.log(relatedModule);
+      return;
+    }
 
     const module = this.getModuleByToken(token);
     const scope = Utils.concat(module.scope, module.target);
@@ -213,7 +219,7 @@ export class OneContainer {
     module.addImport(related);
   }
 
-  public getDynamicMetadataByToken(token: string, key: keyof DynamicModule) {
+  public getDynamicMetadataByToken(token: string, key: Metadata) {
     const metadata = this.dynamicModulesMetadata.get(token);
     return metadata && metadata[key] ? metadata[key] : [];
   }

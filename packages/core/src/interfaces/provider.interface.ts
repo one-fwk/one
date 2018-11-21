@@ -1,6 +1,7 @@
 import { InjectionToken } from '../module';
 import { Type } from './type.interface';
 import { Dependency } from './module';
+import { Scopes } from '../constants';
 
 export type Provider =
   | ProvideToken
@@ -36,5 +37,5 @@ export interface ValueProvider<T> extends ProvideToken {
 
 export interface FactoryProvider<T> extends ProvideToken, MultiDepsProvider {
   useFactory: (...args: any[]) => T | Promise<T>;
-  scope?: string;
+  scope?: Scopes;
 }

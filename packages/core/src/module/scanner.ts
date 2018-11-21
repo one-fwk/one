@@ -1,7 +1,7 @@
 import { CircularDependencyException } from '../errors';
 import { OneContainer } from './container';
 import { Reflector } from '../reflector';
-import { METADATA } from '../constants';
+import { Metadata } from '../constants';
 import { Registry } from '../registry';
 import { OneModule } from './module';
 import { Utils } from '../util';
@@ -56,7 +56,7 @@ export class Scanner {
       module = (<ForwardRef>module).forwardRef();
     }
 
-    const imports = Reflector.get(METADATA.IMPORTS, <Type<OneModule>>module);
+    const imports = Reflector.get(Metadata.IMPORTS, <Type<OneModule>>module);
     const modules = Registry.isDynamicModule(module)
       ? [...imports, ...(module.imports || [])]
       : imports;
@@ -117,7 +117,7 @@ export class Scanner {
     const providers = this.getDynamicMetadata<Provider>(
       module,
       token,
-      METADATA.PROVIDERS as 'providers',
+      Metadata.PROVIDERS,
     );
 
     for (const provider of providers) {
@@ -132,7 +132,7 @@ export class Scanner {
   private getDynamicMetadata<T = Token>(
     module: Type<OneModule>,
     token: string,
-    metadataKey: keyof DynamicModule,
+    metadataKey: Metadata,
   ): T[] {
     return [
       ...Reflector.get(metadataKey, module),
@@ -144,7 +144,7 @@ export class Scanner {
     const exports = this.getDynamicMetadata<ModuleExport>(
       module,
       token,
-      METADATA.EXPORTS as 'exports',
+      Metadata.EXPORTS,
     );
 
     exports.forEach(exportedComponent =>
@@ -164,7 +164,7 @@ export class Scanner {
     const modules = this.getDynamicMetadata<ModuleImport>(
       module,
       token,
-      METADATA.IMPORTS as 'imports',
+      Metadata.IMPORTS,
     );
 
     for (const related of modules) {
