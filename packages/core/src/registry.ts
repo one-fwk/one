@@ -1,6 +1,10 @@
 import { InjectionToken } from './module';
 import { Reflector } from './reflector';
-import { Utils } from './util';
+import { isFunc, isObservable, isPromise, isSymbol } from './util';
+import {
+  CircularDependencyException,
+  InvalidProviderException,
+} from './errors';
 import {
   ProvideToken,
   ILazyInject,
@@ -16,10 +20,6 @@ import {
   Token,
   ModuleExport,
 } from './interfaces';
-import {
-  CircularDependencyException,
-  InvalidProviderException,
-} from './errors';
 
 export class Registry {
   public static readonly lazyInjects = new Set<ILazyInject>();
@@ -28,23 +28,20 @@ export class Registry {
     this.lazyInjects.clear();
   }
 
-  public static getLazyInjects(target: Type<Provider>): ILazyInject[] {
+  public static getLazyInjects(target: Type<any>): ILazyInject[] {
     return [...this.lazyInjects.values()].filter(
       provider => provider.target === target,
     );
   }
 
   public static isModule(target: any) {
-    return (
-      this.isDynamicModule(target) ||
-      (!this.hasProvideToken(target) &&
-        !Reflector.isProvider(target) &&
-        !this.isInjectionToken(target))
-    );
+    return this.isDynamicModule(target)
+      ? Reflector.isModule((<DynamicModule>target).module)
+      : Reflector.isModule(target);
   }
 
   public static hasForwardRef(provider: any) {
-    return !!(provider && (<ForwardRef>provider).forwardRef);
+    return provider && isFunc((<ForwardRef>provider).forwardRef);
   }
 
   public static getForwardRef(provider: ModuleImport) {
@@ -56,7 +53,7 @@ export class Registry {
   public static getProviderName(provider: Provider) {
     const token = this.getProviderToken(provider);
 
-    return Utils.isSymbol(token) ? token.toString() : token.name;
+    return isSymbol(token) ? token.toString() : token.name;
   }
 
   public static isInjectionToken(
@@ -71,19 +68,19 @@ export class Registry {
       : <Type<any>>provider;
   }
 
+  public static isProvider(
+    provider: any,
+  ): provider is InjectionToken<any> | Type<any> {
+    return this.isInjectionToken(provider) || Reflector.isInjectable(provider);
+  }
+
   public static assertProvider(
     val: any,
     context?: string,
   ): Type<any> | InjectionToken<any> {
     if (!val) throw new CircularDependencyException(context!);
 
-    if (
-      !(
-        Utils.isObject(val) ||
-        (!Utils.isNil(val.name) &&
-          (Utils.isFunction(val) || Utils.isFunction(val.constructor)))
-      )
-    ) {
+    if (!this.isProvider(val)) {
       throw new InvalidProviderException(val);
     }
 
@@ -93,8 +90,10 @@ export class Registry {
   public static getProviderToken(
     provider: Token | ModuleImport | ModuleExport,
   ): Token {
-    return typeof provider !== 'symbol'
-      ? this.getInjectionToken((<ProvideToken>provider).provide || provider)
+    return !isSymbol(provider)
+      ? this.getInjectionToken(
+          (<ProvideToken<any>>provider).provide || provider,
+        )
       : provider;
   }
 
@@ -104,27 +103,85 @@ export class Registry {
 
   public static isFactoryProvider(
     provider: Provider,
+    scope: string,
   ): provider is FactoryProvider<any> {
-    return !!(<FactoryProvider<any>>provider).useFactory;
+    const { useFactory, provide } = <FactoryProvider<any>>provider;
+
+    if (useFactory) {
+      const name = this.getProviderName(<any>provide);
+      if (isPromise(useFactory) || isObservable(useFactory)) {
+        throw new Error(
+          `"useFactory" cannot be a Promise or Observable in module ${scope} with ${name}`,
+        );
+      } else if (!isFunc(useFactory)) {
+        throw new Error(
+          `"useFactory" must be a function in module ${scope} with ${name}`,
+        );
+      }
+
+      return true;
+    }
+
+    return false;
   }
 
   public static isValueProvider(
     provider: Provider,
   ): provider is ValueProvider<any> {
-    return !!(<ValueProvider<any>>provider).useValue;
+    // Should we validate "provide"?
+    // useValue can be anything from undefined, null, 0 to ''
+    return (<ValueProvider<any>>provider).hasOwnProperty('useValue');
   }
 
-  public static isClassProvider(provider: Provider): provider is ClassProvider {
-    return !!(<ClassProvider>provider).useClass;
+  public static isClassProvider(
+    provider: Provider,
+    scope: string,
+  ): provider is ClassProvider<any> {
+    const { useClass, provide } = <ClassProvider<any>>provider;
+
+    if (useClass) {
+      const isProvider = this.isProvider(useClass);
+
+      if (!isProvider) {
+        const name = this.getProviderName(provide);
+        throw new Error(
+          `You must provide a class annotated with @Injectable() in module ${scope} with ${name}`,
+        );
+      }
+
+      return true;
+    }
+
+    return false;
   }
 
   public static isExistingProvider(
     provider: Provider,
+    scope: string,
   ): provider is ExistingProvider<any> {
-    return !!(<ExistingProvider<any>>provider).useExisting;
+    // @TODO: Validate "provide" to be instanceof "InjectionToken"
+    const { useExisting, provide } = <ExistingProvider<any>>provider;
+
+    if (useExisting) {
+      const isProvider = this.isProvider(useExisting);
+
+      if (!isProvider) {
+        const name = this.getProviderName(provide);
+
+        throw new Error(
+          `You must provide either an InjectionToken or a class annotated with @Injectable() in module ${scope} with ${name}`,
+        );
+      }
+
+      return true;
+    }
+
+    return false;
   }
 
-  public static hasProvideToken(provider: Provider): provider is ProvideToken {
-    return !!(<ProvideToken>provider).provide;
+  public static hasProvideToken(
+    provider: Provider,
+  ): provider is ProvideToken<any> {
+    return !!(<ProvideToken<any>>provider).provide;
   }
 }
