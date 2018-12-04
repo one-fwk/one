@@ -4,7 +4,7 @@ export class InvalidProviderException extends RuntimeException {
   constructor(provider: any) {
     super(
       `${provider.name ||
-        provider.toString()} is invalid. Must be an InjectionToken or Injectable`,
+        provider.toString()} is invalid. Must be an InjectionToken or class annotated with @Injectable()`,
     );
   }
 }
