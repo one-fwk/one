@@ -1,12 +1,101 @@
 import 'reflect-metadata';
-import {
-  Injectable,
-  Module,
-  OneContainer,
-  UnknownProviderException,
-} from '@one/core';
+import { Global, Injectable, Module, OneContainer } from '@one/core';
+import { OneModule } from '../module';
+import { UnknownModuleException } from '../../errors/exceptions';
+import { UnknownModuleMessage } from '../../errors';
 
 describe('OneContainer', () => {
+  let container: OneContainer;
+
+  beforeEach(() => {
+    container = new OneContainer();
+  });
+
+  @Module()
+  class TestModule {}
+
+  @Global()
+  @Module()
+  class GlobalTestModule {}
+
+  describe('addProvider', () => {
+    it('should throw UnknownModuleException when module is not stored in collection', () => {
+      const token = 'TestModule';
+      const error = new UnknownModuleException([token]);
+
+      return expect(container.addProvider({} as any, token)).rejects.toThrow(
+        error,
+      );
+    });
+  });
+
+  describe('addImport', () => {});
+
+  describe('addExported', () => {
+    it('should throw UnknownModuleException when module is not stored in collection', () => {
+      const token = 'TestModule';
+      const error = new UnknownModuleException([token]);
+
+      expect(() => container.addExported({} as any, token)).toThrow(error);
+    });
+  });
+
+  describe('addModule', () => {
+    it('should not add module if already exists in collection', async () => {
+      const modules = new Map<string, OneModule>();
+      const setSpy = jest.spyOn(modules, 'set');
+      (<any>container).modules = modules;
+
+      await container.addModule(TestModule, []);
+      await container.addModule(TestModule, []);
+
+      expect(setSpy).toHaveBeenCalledTimes(1);
+      expect([...modules.entries()]).toMatchSnapshot();
+    });
+
+    it('should throw an exception if module is undefined', () => {
+      return expect(container.addModule(undefined as any, [])).toThrow();
+    });
+
+    it('should add global module when module is global', async () => {
+      const addGlobalModuleSpy = jest.spyOn(container, 'addGlobalModule');
+      await container.addModule(GlobalTestModule, []);
+      expect(addGlobalModuleSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('addDynamicMetadata', () => {
+    let collection: Map<string, any>;
+    let addSpy: jest.SpyInstance;
+    const token = 'token';
+
+    beforeEach(() => {
+      collection = new Map();
+      (<any>container).dynamicModulesMetadata = collection;
+      addSpy = jest.spyOn(collection, 'set');
+    });
+
+    afterEach(() => addSpy.mockClear());
+
+    describe('when dynamic metadata exists', () => {
+      it('should add to the dynamic metadata collection', () => {
+        const dynamicMetadata = { module: null };
+
+        (<any>container).addDynamicMetadata(token, dynamicMetadata, []);
+        expect(addSpy).toHaveBeenCalledWith(token, dynamicMetadata);
+      });
+    });
+
+    describe('when dynamic metadata does not exists', () => {
+      it('should not add to the dynamic metadata collection', () => {
+        (<any>container).addDynamicMetadata(token, null as any, []);
+        expect(addSpy).not.toHaveBeenCalled();
+      });
+    });
+  });
+});
+
+/*describe('OneContainer', () => {
   let container: OneContainer;
 
   @Module()
@@ -113,3 +202,4 @@ describe('OneContainer', () => {
     });
   });
 });
+*/
