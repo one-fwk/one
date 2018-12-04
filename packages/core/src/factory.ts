@@ -1,7 +1,7 @@
 import { Scanner, OneContainer, OneModule, InjectionToken } from './module';
 import { ExceptionsZone, MissingInjectionTokenException } from './errors';
 import { Registry } from './registry';
-import { Utils } from './util';
+import { series } from './util';
 import { APP_INIT, APP_DESTROY } from './tokens';
 import { FactoryOptions, Type } from './interfaces';
 
@@ -24,12 +24,12 @@ export class OneFactory {
 
   public async destroy() {
     await ExceptionsZone.run(async () => {
-      await Utils.series(this.container.getAllProviders(APP_DESTROY));
+      await series(this.container.getAllProviders(APP_DESTROY));
     });
   }
 
   private async init() {
-    await Utils.series(this.container.getAllProviders(APP_INIT));
+    await series(this.container.getAllProviders(APP_INIT));
   }
 
   public select(module: Type<OneModule>) {
