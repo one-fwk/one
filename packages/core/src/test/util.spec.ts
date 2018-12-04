@@ -1,4 +1,4 @@
-import { DeferredPromise, Utils } from '@one/core';
+import { createDeferredPromise, DeferredPromise, Utils } from '@one/core';
 import { MissingRequiredDependencyMessage } from '@one/core/errors/messages';
 
 describe('Utils', () => {
@@ -22,7 +22,7 @@ describe('Utils', () => {
     let deferred: DeferredPromise;
 
     beforeEach(() => {
-      deferred = Utils.createDeferredPromise();
+      deferred = createDeferredPromise();
     });
 
     it('should create', () => {
