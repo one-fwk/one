@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "precommit": "pretty-quick --staged",
+    "precommit": "pretty-quick --staged --no-verify",
     "commit": "git-cz",
     "lint": "ts-lint -p tsconfig.json -c tslint.json",
     "bootstrap": "lerna bootstrap",
