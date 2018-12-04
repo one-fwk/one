@@ -4,7 +4,8 @@ import { Type, Provider } from './interfaces';
 import { OneModule } from './module';
 import {
   SCOPE_METADATA,
-  PROVIDER_METADATA,
+  IS_PROVIDER_METADATA,
+  IS_MODULE_METADATA,
   SHARED_MODULE_METADATA,
 } from './constants';
 
@@ -40,15 +41,24 @@ export class Reflector {
     return Reflect.hasMetadata(metadataKey, target);
   }
 
-  public static isGlobalModule(target: Type<OneModule>) {
-    return Reflect.hasMetadata(SHARED_MODULE_METADATA, target);
+  public static isGlobalModule(target: any) {
+    return this.get(SHARED_MODULE_METADATA, target) === true;
   }
 
-  public static isProvider(target: Type<Provider | OneModule>) {
-    return Reflect.hasMetadata(PROVIDER_METADATA, target);
+  public static isModule(target: any) {
+    return this.get(IS_MODULE_METADATA, target) === true;
+  }
+
+  public static isInjectable(target: any) {
+    return this.get(IS_PROVIDER_METADATA, target) === true;
+  }
+
+  public static getModuleScope(target: Type<OneModule>) {
+    const scope = this.get(SHARED_MODULE_METADATA, target);
+    return scope ? scope : 'global';
   }
 
   public static resolveProviderScope(provider: Type<Provider>) {
-    return Reflect.getMetadata(SCOPE_METADATA, provider);
+    return this.get(SCOPE_METADATA, provider);
   }
 }
