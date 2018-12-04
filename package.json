@@ -24,7 +24,9 @@
     "nodemon": "^1.18.6",
     "prettier": "^1.15.1",
     "pretty-quick": "^1.8.0",
+    "reflect-metadata": "^0.1.12",
     "rimraf": "^2.6.2",
+    "rxjs": "^6.2.2",
     "ts-jest": "23.10.4",
     "ts-node": "^7.0.1",
     "tsconfig-paths": "^3.5.0",
@@ -33,27 +35,7 @@
   "workspaces": [
     "packages/*"
   ],
-  "jest": {
-    "setupTestFrameworkScriptFile": "jest-extended",
-    "moduleNameMapper": {
-      "@one/core/(.*)": "<rootDir>/packages/core/src/$1",
-      "@one/(.*)": "<rootDir>/packages/$1/src"
-    },
-    "moduleFileExtensions": [
-      "js",
-      "ts",
-      "json"
-    ],
-    "transform": {
-      "^.+\\.tsx?$": "ts-jest"
-    },
-    "globals": {
-      "ts-jest": {
-        "tsConfigFile": "tsconfig.spec.json"
-      }
-    },
-    "testMatch": [
-      "<rootDir>/packages/**/*.(spec|test).+(ts|tsx)"
-    ]
+  "dependencies": {
+    "fast-safe-stringify": "latest"
   }
 }
