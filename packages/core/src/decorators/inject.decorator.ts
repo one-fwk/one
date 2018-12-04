@@ -12,18 +12,18 @@ export function createLazyInjection(target: object, property: string) {
 }
 
 export function Inject(provider: Dependency) {
-  return (target: object, property: string) => {
+  return (target: object, propertyKey: string, index?: number) => {
     if (!Registry.hasForwardRef(provider)) {
       Registry.assertProvider(provider, target.constructor.name);
 
       const token = Registry.getInjectionToken(<Token>provider);
-      return inject(<any>token)(target, property);
+      return inject(<any>token)(target, propertyKey);
     }
 
     Registry.lazyInjects.add({
       target: target.constructor,
       forwardRef: <ForwardRef>provider,
-      lazyInject: createLazyInjection(target, property),
+      lazyInject: createLazyInjection(target, propertyKey),
     });
   };
 }

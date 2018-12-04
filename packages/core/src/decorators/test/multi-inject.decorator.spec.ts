@@ -1,28 +1,24 @@
 import 'reflect-metadata';
 import { Test } from '@one/testing';
-import {
-  Injectable,
-  InjectionToken,
-  MissingInjectionTokenMessage,
-  MultiInject,
-} from '@one/core';
+import { Injectable, InjectionToken, MultiInject } from '@one/core';
+import { MissingInjectionTokenMessage } from '../../errors';
 
 describe('@MultiInject()', () => {
   it('should multi inject providers', async () => {
     interface Weapon {
-      name: string;
+      power: number;
     }
 
     const WEAPON = new InjectionToken<Weapon>('WEAPON');
 
     @Injectable()
     class Katana implements Weapon {
-      name = 'Katana';
+      power = 10;
     }
 
     @Injectable()
     class Shuriken implements Weapon {
-      name = 'Shuriken';
+      power = 0.3;
     }
 
     @Injectable()
@@ -72,7 +68,7 @@ describe('@MultiInject()', () => {
       class Ninja implements Weapon {}
 
       class Test {
-        constructor(@MultiInject(Ninja) weapons: Weapon[]) {}
+        constructor(@MultiInject(<any>Ninja) weapons: Weapon[]) {}
       }
     }).toThrow(message);
   });
