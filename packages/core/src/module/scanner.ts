@@ -4,7 +4,7 @@ import { Reflector } from '../reflector';
 import { Metadata } from '../constants';
 import { Registry } from '../registry';
 import { OneModule } from './module';
-import { Utils } from '../util';
+import { concat } from '../util';
 import {
   ModuleExport,
   DynamicModule,
@@ -64,7 +64,7 @@ export class Scanner {
     for (const innerModule of modules) {
       if (ctxRegistry.includes(innerModule)) continue;
 
-      const scopedModules = Utils.concat(scope, module);
+      const scopedModules = concat(scope, module);
       await this.scanForModules(innerModule, scopedModules, ctxRegistry);
     }
   }

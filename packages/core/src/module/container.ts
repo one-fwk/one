@@ -3,8 +3,8 @@ import { ModuleCompiler } from './compiler';
 import { Reflector } from '../reflector';
 import { Registry } from '../registry';
 import { OneModule } from './module';
-import { Utils } from '../util';
 import { Metadata } from '../constants';
+import { isNil, flatten, concat, getValues } from '../util';
 import {
   UnknownModuleException,
   InvalidModuleException,
@@ -37,7 +37,7 @@ export class OneContainer {
   >();
 
   private getModulesFrom(module?: Type<OneModule>) {
-    return !Utils.isNil(module)
+    return !isNil(module)
       ? [<OneModule>this.getModule(module)]
       : this.getModuleValues();
   }
@@ -94,7 +94,7 @@ export class OneContainer {
 
     const token = Registry.getProviderToken(provider);
 
-    return Utils.flatten<T | Promise<Type<Provider>>>(
+    return flatten<T | Promise<Type<Provider>>>(
       this.getModulesFrom(target).map(({ providers }) =>
         providers.isBound(token) ? providers.getAll(token) : [],
       ),
@@ -102,7 +102,7 @@ export class OneContainer {
   }
 
   public getModuleValues() {
-    return Utils.getValues<OneModule>(this.modules.entries());
+    return getValues<OneModule>(this.modules.entries());
   }
 
   public hasModule(module: Type<any>) {
@@ -115,7 +115,7 @@ export class OneContainer {
 
   public getModuleByToken(token: string) {
     if (!this.modules.has(token)) {
-      throw new UnknownModuleException([]);
+      throw new UnknownModuleException([token]);
     }
 
     return <OneModule>this.modules.get(token);
@@ -160,7 +160,7 @@ export class OneContainer {
     oneModule.addGlobalProviders();
     this.modules.set(token, oneModule);
 
-    const modules = Utils.concat(scope, target);
+    const modules = concat(scope, target);
     this.addDynamicMetadata(token, dynamicMetadata!, modules);
 
     if (Reflector.isGlobalModule(target)) {
@@ -202,13 +202,10 @@ export class OneContainer {
   }
 
   public async addImport(relatedModule: Partial<ModuleImport>, token: string) {
-    if (!this.modules.has(token)) {
-      console.log(relatedModule);
-      return;
-    }
+    if (!this.modules.has(token)) return;
 
     const module = this.getModuleByToken(token);
-    const scope = Utils.concat(module.scope, module.target);
+    const scope = concat(module.scope, module.target);
 
     const { token: relatedModuleToken } = await this.moduleCompiler.compile(
       <any>relatedModule,

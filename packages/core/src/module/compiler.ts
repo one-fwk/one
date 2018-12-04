@@ -2,7 +2,7 @@ import { DynamicModule, Type, ModuleFactory } from '../interfaces';
 import { ModuleTokenFactory } from './module-token-factory';
 import { Registry } from '../registry';
 import { OneModule } from './module';
-import { Utils } from '../util';
+import { getDeferred } from '../util';
 
 export type ModuleCompile = Type<any> | Promise<DynamicModule> | DynamicModule;
 
@@ -25,7 +25,7 @@ export class ModuleCompiler {
   private async extractMetadata(
     module: ModuleCompile,
   ): Promise<Partial<ModuleFactory>> {
-    const moduleRef = await Utils.getDeferred<Type<OneModule> | DynamicModule>(
+    const moduleRef = await getDeferred<Type<OneModule> | DynamicModule>(
       module,
     );
 
