@@ -1,12 +1,12 @@
 import 'reflect-metadata';
+import { Registry } from '../registry';
+import { ProvideToken } from '../interfaces';
 import {
   Module,
   Injectable,
   InjectionToken,
-  Registry,
   forwardRef,
   Inject,
-  ProvideToken,
 } from '@one/core';
 
 describe('Registry', () => {
@@ -19,7 +19,7 @@ describe('Registry', () => {
       @Injectable()
       class Nest {
         @Inject(ref)
-        private readonly nest: Nest;
+        private readonly nest!: Nest;
       }
 
       const lazyInjects = Registry.getLazyInjects(Nest);
@@ -109,7 +109,6 @@ describe('Registry', () => {
     });
 
     afterEach(() => {
-      // spy.mockRestore();
       spy.mockClear();
     });
 

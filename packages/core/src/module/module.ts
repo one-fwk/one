@@ -6,7 +6,7 @@ import { ProviderTypes, Scopes } from '../constants';
 import { OneContainer } from './container';
 import { Reflector } from '../reflector';
 import { Registry } from '../registry';
-import { Utils } from '../util';
+import { createDeferredPromise, series } from '../util';
 import {
   ClassProvider,
   FactoryProvider,
@@ -33,7 +33,7 @@ export class OneModule {
   public readonly providers = new Container();
   public readonly lazyInject = getDecorators(this.providers).lazyInject;
   public readonly exports = new Set<Token>();
-  public readonly created = Utils.createDeferredPromise();
+  public readonly created = createDeferredPromise();
 
   constructor(
     public readonly target: Type<any>,
@@ -110,19 +110,25 @@ export class OneModule {
   private getRelatedProviders() {
     const providerScope = new Set<Token>();
 
-    const find = (module: OneModule | Dependency) => {
-      module = <any>Registry.getForwardRef(<Dependency>module);
+    const find = (type: OneModule | Dependency | Token) => {
+      type = <any>Registry.getForwardRef(<Dependency>type);
 
-      if (Reflector.isProvider(<any>module)) {
-        providerScope.add(<Token>module);
+      if (Reflector.isInjectable(type) || Registry.isInjectionToken(type)) {
+        providerScope.add(<Token>type);
       } else {
-        for (const related of (<OneModule>module).exports) {
-          if (this.container.hasModule(<Type<OneModule>>related)) {
-            const ref = this.container.getModule(<Type<OneModule>>related);
-            find(ref!);
+        for (const related of (<OneModule>type).exports) {
+          const ref = this.container.hasModule(<Type<OneModule>>related)
+            ? this.container.getModule(<Type<OneModule>>related)
+            : related;
+
+          find(ref!);
+
+          /*if (this.container.hasModule(<Type<OneModule>>related)) {
+            const module = this.container.getModule(<Type<OneModule>>related);
+            find(module!);
           } else {
             providerScope.add(<Token>related);
-          }
+          }*/
         }
       }
     };
@@ -170,7 +176,7 @@ export class OneModule {
 
     module.onModuleInit && (await module.onModuleInit());
 
-    await Utils.series(
+    await series(
       this.container.getAllProviders<Promise<any>>(MODULE_INIT, this.target),
     );
 
@@ -178,13 +184,15 @@ export class OneModule {
   }
 
   private getProviderType(provider: Provider) {
-    if (Registry.isFactoryProvider(provider)) {
+    const module = this.target.name;
+
+    if (Registry.isFactoryProvider(provider, module)) {
       return ProviderTypes.FACTORY;
     } else if (Registry.isValueProvider(provider)) {
       return ProviderTypes.VALUE;
-    } else if (Registry.isClassProvider(provider)) {
+    } else if (Registry.isClassProvider(provider, module)) {
       return ProviderTypes.CLASS;
-    } else if (Registry.isExistingProvider(provider)) {
+    } else if (Registry.isExistingProvider(provider, module)) {
       return ProviderTypes.EXISTING;
     }
 
@@ -246,7 +254,7 @@ export class OneModule {
     }
   }
 
-  private bindClassProvider(token: Token, provider: ClassProvider) {
+  private bindClassProvider(token: Token, provider: ClassProvider<any>) {
     return this.providers.bind(token).to(provider.useClass);
   }
 
@@ -276,9 +284,8 @@ export class OneModule {
     } else if (type === ProviderTypes.VALUE) {
       this.bindValueProvider(token, <ValueProvider<any>>provider);
     } else if (type === ProviderTypes.CLASS) {
-      this.bindClassProvider(token, <ClassProvider>provider);
+      this.bindClassProvider(token, <ClassProvider<any>>provider);
     } else if (type === ProviderTypes.EXISTING) {
-      // @TODO: Test useExisting binding
       this.bindExistingProvider(token, <ExistingProvider<any>>provider);
     }
   }

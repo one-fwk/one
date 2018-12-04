@@ -1,20 +1,20 @@
 import * as hash from 'object-hash';
+import stringify from 'fast-safe-stringify';
 
-import { SHARED_MODULE_METADATA } from '../constants';
 import { Type, DynamicModule } from '../interfaces';
-import { OneModule } from './module';
+import { Reflector } from '../reflector';
 
 export class ModuleTokenFactory {
   public create(
-    target: Type<OneModule>,
-    scope: Type<OneModule>[],
+    target: Type<any>,
+    scope: Type<any>[],
     dynamicModuleMetadata?: Partial<DynamicModule>,
   ): string {
-    const reflectedScope = this.reflectScope(target);
+    const reflectedScope = Reflector.getModuleScope(target);
     const isSingleScoped = reflectedScope === true;
 
     const opaqueToken = {
-      module: this.getModuleName(target),
+      module: target.name,
       dynamic: this.getDynamicMetadataToken(dynamicModuleMetadata!),
       scope: isSingleScoped ? this.getScopeStack(scope) : reflectedScope,
     };
@@ -25,17 +25,15 @@ export class ModuleTokenFactory {
   private getDynamicMetadataToken(
     dynamicModuleMetadata: Partial<DynamicModule>,
   ) {
-    return dynamicModuleMetadata ? JSON.stringify(dynamicModuleMetadata) : '';
+    // Uses safeStringify instead of JSON.stringify
+    // to support circular dynamic modules
+    return dynamicModuleMetadata ? stringify(dynamicModuleMetadata) : '';
   }
 
-  private getModuleName(target: Type<OneModule>) {
-    return target.name;
-  }
-
-  public getScopeStack(scope: Type<OneModule>[]): string[] {
+  public getScopeStack(scope: Type<any>[]): string[] {
     const reversedScope = scope.reverse();
     const firstGlobalIndex = reversedScope.findIndex(
-      s => this.reflectScope(s) === 'global',
+      s => Reflector.getModuleScope(s) === 'global',
     );
     scope.reverse();
 
@@ -44,10 +42,5 @@ export class ModuleTokenFactory {
         ? scope.slice(scope.length - firstGlobalIndex - 1)
         : scope;
     return stack.map(module => module.name);
-  }
-
-  private reflectScope(target: Type<OneModule>) {
-    const scope = Reflect.getMetadata(SHARED_MODULE_METADATA, target);
-    return scope ? scope : 'global';
   }
 }

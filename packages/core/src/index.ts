@@ -7,6 +7,12 @@ export {
   DynamicModule,
   OnModuleInit,
   OnModuleDestroy,
+  FactoryProvider,
+  ClassProvider,
+  ValueProvider,
+  Dependency,
+  Provider,
+  Token,
 } from './interfaces';
 
 export * from './decorators';

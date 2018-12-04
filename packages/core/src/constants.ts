@@ -11,13 +11,14 @@ export enum Scopes {
 }
 
 export enum ProviderTypes {
-  FACTORY,
-  CLASS,
-  EXISTING,
-  VALUE,
-  DEFAULT,
+  FACTORY = 'factory',
+  CLASS = 'class',
+  EXISTING = 'existing',
+  VALUE = 'value',
+  DEFAULT = 'default',
 }
 
 export const SHARED_MODULE_METADATA = Symbol.for('Metadata<SharedModule>');
+export const IS_MODULE_METADATA = Symbol.for('Metadata<Module>');
 export const SCOPE_METADATA = Symbol.for('Metadata<Scope>');
-export const PROVIDER_METADATA = Symbol.for('Metadata<Provider>');
+export const IS_PROVIDER_METADATA = Symbol.for('Metadata<Provider>');
