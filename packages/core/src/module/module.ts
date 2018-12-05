@@ -1,39 +1,42 @@
 import { Container } from 'inversify';
 import getDecorators from 'inversify-inject-decorators';
 
-import { MODULE_INIT, Injector, ONE_MODULE } from '../tokens';
+import { Injector, MODULE_INIT, ONE_MODULE } from '../tokens';
 import { ProviderTypes, Scopes } from '../constants';
 import { OneContainer } from './container';
 import { Reflector } from '../reflector';
 import { Registry } from '../registry';
 import { createDeferredPromise, series } from '../util';
 import {
+  MultiProviderException,
+  UnknownExportException,
+  UnknownProviderException,
+} from '../errors';
+import {
   ClassProvider,
+  Dependency,
+  ExistingProvider,
   FactoryProvider,
   ModuleExport,
   ModuleImport,
+  MultiDepsProvider,
   OnModuleInit,
   Provider,
-  Type,
   Token,
+  Type,
   ValueProvider,
-  Dependency,
-  MultiDepsProvider,
-  ExistingProvider,
 } from '../interfaces';
-import {
-  UnknownProviderException,
-  MultiProviderException,
-  UnknownExportException,
-} from '../errors';
 
 export class OneModule {
   public readonly imports = new Set<OneModule>();
+  // @TODO: Rename "injectables" to "providers"
   public readonly injectables = new Set<Provider>();
-  public readonly providers = new Container();
+  // @TODO: Rename "providers" to "injector"
+  public readonly providers = new Container({ skipBaseClassChecks: true });
   public readonly lazyInject = getDecorators(this.providers).lazyInject;
   public readonly exports = new Set<Token>();
   public readonly created = createDeferredPromise();
+  private readonly factoryValues = new Map<Token, any>();
 
   constructor(
     public readonly target: Type<any>,
@@ -103,7 +106,7 @@ export class OneModule {
     providers.forEach(provider => {
       const ref = this.container.getProvider(provider, this.target);
 
-      this.providers.bind(<any>provider).toConstantValue(ref);
+      this.providers.bind(provider).toConstantValue(ref);
     });
   }
 
@@ -111,25 +114,20 @@ export class OneModule {
     const providerScope = new Set<Token>();
 
     const find = (type: OneModule | Dependency | Token) => {
-      type = <any>Registry.getForwardRef(<Dependency>type);
+      // type = Registry.getForwardRef(<Dependency>type);
 
       if (Reflector.isInjectable(type) || Registry.isInjectionToken(type)) {
         providerScope.add(<Token>type);
-      } else {
+      } else if (type instanceof OneModule) {
         for (const related of (<OneModule>type).exports) {
           const ref = this.container.hasModule(<Type<OneModule>>related)
             ? this.container.getModule(<Type<OneModule>>related)
             : related;
 
           find(ref!);
-
-          /*if (this.container.hasModule(<Type<OneModule>>related)) {
-            const module = this.container.getModule(<Type<OneModule>>related);
-            find(module!);
-          } else {
-            providerScope.add(<Token>related);
-          }*/
         }
+      } else {
+        throw new Error('Invalid type');
       }
     };
 
@@ -144,10 +142,9 @@ export class OneModule {
     this.linkRelatedProviders();
 
     for (const provider of this.injectables) {
-      const isMulti = (<MultiDepsProvider>provider).multi;
       const token = Registry.getProviderToken(provider);
 
-      // @TODO: Fix multi providers properly
+      const isMulti = (<MultiDepsProvider>provider).multi;
       if (!isMulti && this.container.providerTokens.includes(token)) {
         const name = Registry.getProviderName(provider);
         throw new MultiProviderException(name);
@@ -167,7 +164,9 @@ export class OneModule {
   }
 
   public async create() {
-    if (this.providers.isBound(this.target)) return;
+    if (this.providers.isBound(this.target)) {
+      throw new Error('Tried to create the same module twice');
+    }
 
     await this.bindProviders();
 
@@ -186,6 +185,9 @@ export class OneModule {
   private getProviderType(provider: Provider) {
     const module = this.target.name;
 
+    if (Reflector.isInjectable(provider)) {
+      return ProviderTypes.DEFAULT;
+    }
     if (Registry.isFactoryProvider(provider, module)) {
       return ProviderTypes.FACTORY;
     } else if (Registry.isValueProvider(provider)) {
@@ -196,7 +198,7 @@ export class OneModule {
       return ProviderTypes.EXISTING;
     }
 
-    return ProviderTypes.DEFAULT;
+    throw new Error('');
   }
 
   public getProvider(ref: ModuleImport): Token {
@@ -208,13 +210,13 @@ export class OneModule {
     return provider;
   }
 
-  private async getDependencies(dependencies: ModuleImport[] = []) {
-    return await Promise.all(
+  private getDependencies(dependencies: ModuleImport[] = []) {
+    return Promise.all(
       dependencies.map(dependency => {
         const ref = Registry.getForwardRef(dependency);
         Registry.assertProvider(ref);
 
-        const provider = this.getProvider(<any>ref);
+        const provider = this.getProvider(ref);
         return this.container.getProvider(provider, this.target);
       }),
     );
@@ -226,19 +228,19 @@ export class OneModule {
   ) {
     const deps = await this.getDependencies(provider.deps);
 
-    // const factory = await provider.useFactory(...deps);
-    if (provider.scope === Scopes.TRANSIENT) {
-      return this.providers
-        .bind(token)
-        .toDynamicValue(() => <any>provider.useFactory(...deps));
-    }
+    return this.providers.bind(token).toFactory(() => {
+      if (
+        !this.factoryValues.has(token) ||
+        provider.scope === Scopes.TRANSIENT
+      ) {
+        this.factoryValues.set(token, provider.useFactory(...deps));
+      }
 
-    return this.providers
-      .bind(token)
-      .toProvider(() => <any>provider.useFactory(...deps));
+      return this.factoryValues.get(token);
+    });
   }
 
-  private bindProvider(provider: Type<Provider>, scope?: Scopes) {
+  private bindProvider(provider: Type<any>, scope?: Scopes) {
     const binding = this.providers.bind(provider).toSelf();
 
     switch (scope) {
@@ -248,7 +250,7 @@ export class OneModule {
       case Scopes.REQUEST:
         return binding.inRequestScope();
 
-      case Scopes.SINGLETON:
+      // case Scopes.SINGLETON:
       default:
         return binding.inSingletonScope();
     }
@@ -263,22 +265,22 @@ export class OneModule {
   }
 
   private bindExistingProvider(token: Token, provider: ExistingProvider<any>) {
-    const existingToken = Registry.getInjectionToken(provider.useExisting);
+    const existingToken = Registry.getOpaqueToken(provider.useExisting);
     const existing = this.providers.get(existingToken);
     return this.providers.bind(token).toConstantValue(existing);
   }
 
   public async bind(token: Token, type: ProviderTypes, provider: Provider) {
     if (type === ProviderTypes.DEFAULT) {
-      const scope = Reflector.resolveProviderScope(<Type<Provider>>provider);
-      const lazyInjects = Registry.getLazyInjects(<Type<Provider>>provider);
+      const scope = Reflector.resolveProviderScope(<Type<any>>provider);
+      const lazyInjects = Registry.getLazyInjects(<Type<any>>provider);
 
       lazyInjects.forEach(({ lazyInject, forwardRef }) => {
         const token = Registry.getForwardRef(forwardRef);
-        lazyInject(this.lazyInject, <Token>token);
+        lazyInject(this.lazyInject, token);
       });
 
-      this.bindProvider(<Type<Provider>>provider, scope);
+      this.bindProvider(<Type<any>>provider, scope);
     } else if (type === ProviderTypes.FACTORY) {
       await this.bindFactoryProvider(token, <FactoryProvider<any>>provider);
     } else if (type === ProviderTypes.VALUE) {
