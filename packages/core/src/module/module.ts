@@ -1,4 +1,3 @@
-import { Container } from 'inversify';
 import getDecorators from 'inversify-inject-decorators';
 
 import { Injector, MODULE_INIT, ONE_MODULE } from '../tokens';
@@ -29,11 +28,9 @@ import {
 
 export class OneModule {
   public readonly imports = new Set<OneModule>();
-  // @TODO: Rename "injectables" to "providers"
-  public readonly injectables = new Set<Provider>();
-  // @TODO: Rename "providers" to "injector"
-  public readonly providers = new Container({ skipBaseClassChecks: true });
-  public readonly lazyInject = getDecorators(this.providers).lazyInject;
+  public readonly providers = new Set<Provider>();
+  public readonly injector = new Injector({ skipBaseClassChecks: true });
+  public readonly lazyInject = getDecorators(this.injector).lazyInject;
   public readonly exports = new Set<Token>();
   public readonly created = createDeferredPromise();
   private readonly factoryValues = new Map<Token, any>();
@@ -49,11 +46,11 @@ export class OneModule {
   }
 
   public addProvider(provider: Provider) {
-    this.injectables.add(provider);
+    this.providers.add(provider);
   }
 
   private providerContainerHasToken(token: Token) {
-    return [...this.injectables.values()].some(
+    return [...this.providers.values()].some(
       provider => Registry.getProviderToken(provider) === token,
     );
   }
@@ -95,7 +92,7 @@ export class OneModule {
       Injector,
       OneContainer,
       ONE_MODULE,
-      ...this.injectables.values(),
+      ...this.providers.values(),
       ...this.getRelatedProviders().values(),
     ];
   }
@@ -106,7 +103,7 @@ export class OneModule {
     providers.forEach(provider => {
       const ref = this.container.getProvider(provider, this.target);
 
-      this.providers.bind(provider).toConstantValue(ref);
+      this.injector.bind(provider).toConstantValue(ref);
     });
   }
 
@@ -141,7 +138,7 @@ export class OneModule {
   private async bindProviders() {
     this.linkRelatedProviders();
 
-    for (const provider of this.injectables) {
+    for (const provider of this.providers) {
       const token = Registry.getProviderToken(provider);
 
       const isMulti = (<MultiDepsProvider>provider).multi;
@@ -164,14 +161,14 @@ export class OneModule {
   }
 
   public async create() {
-    if (this.providers.isBound(this.target)) {
+    if (this.injector.isBound(this.target)) {
       throw new Error('Tried to create the same module twice');
     }
 
     await this.bindProviders();
 
-    this.providers.bind(this.target).toSelf();
-    const module = this.providers.get<OnModuleInit>(this.target);
+    this.injector.bind(this.target).toSelf();
+    const module = this.injector.get<OnModuleInit>(this.target);
 
     module.onModuleInit && (await module.onModuleInit());
 
@@ -228,7 +225,7 @@ export class OneModule {
   ) {
     const deps = await this.getDependencies(provider.deps);
 
-    return this.providers.bind(token).toFactory(() => {
+    return this.injector.bind(token).toFactory(() => {
       if (
         !this.factoryValues.has(token) ||
         provider.scope === Scopes.TRANSIENT
@@ -241,7 +238,7 @@ export class OneModule {
   }
 
   private bindProvider(provider: Type<any>, scope?: Scopes) {
-    const binding = this.providers.bind(provider).toSelf();
+    const binding = this.injector.bind(provider).toSelf();
 
     switch (scope) {
       case Scopes.TRANSIENT:
@@ -257,17 +254,17 @@ export class OneModule {
   }
 
   private bindClassProvider(token: Token, provider: ClassProvider<any>) {
-    return this.providers.bind(token).to(provider.useClass);
+    return this.injector.bind(token).to(provider.useClass);
   }
 
   private bindValueProvider(token: Token, provider: ValueProvider<any>) {
-    return this.providers.bind(token).toConstantValue(provider.useValue);
+    return this.injector.bind(token).toConstantValue(provider.useValue);
   }
 
   private bindExistingProvider(token: Token, provider: ExistingProvider<any>) {
     const existingToken = Registry.getOpaqueToken(provider.useExisting);
-    const existing = this.providers.get(existingToken);
-    return this.providers.bind(token).toConstantValue(existing);
+    const existing = this.injector.get(existingToken);
+    return this.injector.bind(token).toConstantValue(existing);
   }
 
   public async bind(token: Token, type: ProviderTypes, provider: Provider) {
@@ -293,16 +290,16 @@ export class OneModule {
   }
 
   public addGlobalProviders() {
-    this.providers.bind(Injector).toConstantValue(this.providers);
-    this.providers.bind(OneContainer).toConstantValue(this.container);
-    this.providers.bind(ONE_MODULE.name).toConstantValue(this);
+    this.injector.bind(Injector).toConstantValue(this.injector);
+    this.injector.bind(OneContainer).toConstantValue(this.container);
+    this.injector.bind(ONE_MODULE.name).toConstantValue(this);
 
-    this.providers
+    this.injector
       .bind(Injector)
-      .toConstantValue(this.providers)
+      .toConstantValue(this.injector)
       .whenInjectedInto(<any>this.target);
 
-    this.providers
+    this.injector
       .bind(OneContainer)
       .toConstantValue(this.container)
       .whenInjectedInto(<any>this.target);

@@ -42,10 +42,10 @@ describe('OneModule', () => {
       it('should throw MultiProviderException if providers with same identifier exists without multi property set', async () => {
         const error = new MultiProviderException(TEST.name.toString());
 
-        module.injectables.add({
+        module.providers.add({
           provide: TEST,
         });
-        module.injectables.add({
+        module.providers.add({
           provide: TEST,
         });
 
@@ -58,8 +58,8 @@ describe('OneModule', () => {
           multi: true,
         };
 
-        module.injectables.add(provider);
-        module.injectables.add(provider);
+        module.providers.add(provider);
+        module.providers.add(provider);
 
         await expect(module.bindProviders()).resolves.not.toThrow();
       });
@@ -69,7 +69,7 @@ describe('OneModule', () => {
       let provider: any;
 
       beforeEach(() => {
-        module.providers.bind(TestService).toSelf();
+        module.injector.bind(TestService).toSelf();
         provider = {
           useExisting: TestService,
         };
@@ -80,7 +80,7 @@ describe('OneModule', () => {
 
         module.bindExistingProvider(TEST, provider);
 
-        expect(module.providers.get(TEST)).toBeInstanceOf(TestService);
+        expect(module.injector.get(TEST)).toBeInstanceOf(TestService);
       });
 
       it('should be instance of TestService when using class as identifier', () => {
@@ -88,7 +88,7 @@ describe('OneModule', () => {
 
         module.bindExistingProvider(Test, provider);
 
-        expect(module.providers.get(Test)).toBeInstanceOf(TestService);
+        expect(module.injector.get(Test)).toBeInstanceOf(TestService);
       });
     });
 
@@ -109,8 +109,8 @@ describe('OneModule', () => {
       it('should bind FactoryProvider as singleton', async () => {
         await module.bindFactoryProvider(identifier, provider);
 
-        const firstVal = module.providers.get(identifier);
-        const secondVal = module.providers.get(identifier);
+        const firstVal = module.injector.get(identifier);
+        const secondVal = module.injector.get(identifier);
 
         expect(provider.useFactory).toHaveBeenCalledTimes(1);
         expect(firstVal).toEqual(secondVal);
@@ -120,8 +120,8 @@ describe('OneModule', () => {
         provider.scope = Scopes.TRANSIENT;
         await module.bindFactoryProvider(identifier, provider);
 
-        const firstVal = module.providers.get(identifier);
-        const secondVal = module.providers.get(identifier);
+        const firstVal = module.injector.get(identifier);
+        const secondVal = module.injector.get(identifier);
 
         expect(provider.useFactory).toHaveBeenCalledTimes(2);
         expect(firstVal).not.toEqual(secondVal);
