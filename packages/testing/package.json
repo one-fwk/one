@@ -1,10 +1,11 @@
 {
   "name": "@one/testing",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "scripts": {
+    "prepublish": "yarn build",
     "build": "tsc -p tsconfig.build.json"
   },
   "publishConfig": {
@@ -14,7 +15,7 @@
   "author": "Marcus S. Abildskov",
   "license": "MIT",
   "dependencies": {
-    "@one/core": "^1.1.1"
+    "@one/core": "latest"
   },
   "gitHead": "9c1512e1a8a4d3becb74caa42908c56163002982"
 }
