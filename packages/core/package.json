@@ -1,6 +1,6 @@
 {
   "name": "@one/core",
-  "version": "1.3.6",
+  "version": "1.3.7",
   "description": "",
   "main": "lib/one-core.js",
   "typings": "lib/index.d.ts",
