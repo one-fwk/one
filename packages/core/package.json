@@ -1,11 +1,12 @@
 {
   "name": "@one/core",
-  "version": "1.3.0",
+  "version": "1.3.2",
   "description": "",
-  "main": "lib/index.js",
-  "typings": "./lib/index.d.ts",
+  "main": "lib/one-core.js",
+  "typings": "lib/index.d.ts",
+  "module": "lib/one-core.mjs",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "rollup -c",
     "prepublish": "yarn build"
   },
   "publishConfig": {
