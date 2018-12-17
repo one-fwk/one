@@ -1,6 +1,6 @@
 import * as hash from 'object-hash';
 
-import { ModuleTokenFactory } from '../module-token-factory';
+import { ModuleTokenFactory } from '../token-factory';
 
 describe('ModuleTokenFactory', () => {
   let factory: ModuleTokenFactory;

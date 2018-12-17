@@ -7,6 +7,9 @@ export {
   DynamicModule,
   OnModuleInit,
   OnModuleDestroy,
+  OnAppInit,
+  OnAppDestroy,
+  ModuleWithProviders,
   FactoryProvider,
   ClassProvider,
   ValueProvider,
@@ -22,6 +25,7 @@ export * from './reflector';
 export * from './metadata-storage';
 export * from './tokens';
 export * from './util';
+export * from './constants';
 // export * from './bootstrap';
 // export * from './errors';
 // export * from './registry';

@@ -3,7 +3,6 @@ import { multiInject } from 'inversify';
 import { MissingInjectionTokenException } from '../errors';
 import { InjectionToken } from '../module';
 import { Registry } from '../registry';
-import { Type } from '../interfaces';
 
 export function MultiInject<T>(token: InjectionToken<T>) {
   return (target: object, propertyKey: string, index?: number) => {

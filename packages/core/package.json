@@ -6,7 +6,7 @@
   "typings": "lib/index.d.ts",
   "module": "lib/one-core.mjs",
   "scripts": {
-    "build": "rollup -c",
+    "build": "rm -rf lib && rollup -c",
     "prepublish": "yarn build"
   },
   "publishConfig": {

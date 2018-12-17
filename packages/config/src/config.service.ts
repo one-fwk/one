@@ -1,4 +1,4 @@
-import { Injectable, Utils } from '@one/core';
+import { Injectable, promisify } from '@one/core';
 import get = require('lodash.get');
 import set = require('lodash.set');
 import * as fs from 'fs-extra';
@@ -22,7 +22,7 @@ export class ConfigService {
   }
 
   public async load(globPath?: string) {
-    const files = await Utils.promisify(glob)<string[]>(globPath);
+    const files = await promisify(glob)<string[]>(globPath);
 
     await Promise.all(
       files.map(async file => {

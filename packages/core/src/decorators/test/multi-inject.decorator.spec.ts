@@ -1,7 +1,10 @@
 import 'reflect-metadata';
 import { Test } from '@one/testing';
 import { Injectable, InjectionToken, MultiInject } from '@one/core';
-import { MissingInjectionTokenMessage } from '../../errors';
+import {
+  MissingInjectionTokenException,
+  MissingInjectionTokenMessage,
+} from '../../errors';
 
 describe('@MultiInject()', () => {
   it('should multi inject providers', async () => {
@@ -61,15 +64,14 @@ describe('@MultiInject()', () => {
   });
 
   it('should throw error when not using an <InjectionToken>', () => {
-    const message = MissingInjectionTokenMessage('@MultiInject()');
+    const error = new MissingInjectionTokenException('@MultiInject()');
 
     expect(() => {
-      interface Weapon {}
-      class Ninja implements Weapon {}
+      class Ninja {}
 
       class Test {
-        constructor(@MultiInject(<any>Ninja) weapons: Weapon[]) {}
+        constructor(@MultiInject(<any>Ninja) weapons: any[]) {}
       }
-    }).toThrow(message);
+    }).toThrow(error);
   });
 });

@@ -1,13 +1,4 @@
-import {
-  ClassProvider,
-  Dependency,
-  FactoryProvider,
-  OneFactory,
-  Provider,
-  Token,
-  Type,
-  ValueProvider,
-} from '@one/core';
+import { Dependency, OneFactory, Type } from '@one/core';
 
 import { OverrideBy, OverrideByFactoryOptions } from './interfaces';
 
@@ -23,7 +14,7 @@ export class TestingModule extends OneFactory {
   ): OverrideBy {
     return {
       useValue: (value: any) => add({ useValue: value }),
-      useClass: (metatype: Type<any>) => add({ useClass: metatype }),
+      useClass: (metatype: Type) => add({ useClass: metatype }),
       useFactory: (options: OverrideByFactoryOptions) =>
         add({ ...options, useFactory: options.factory }),
     };

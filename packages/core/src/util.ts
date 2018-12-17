@@ -1,15 +1,8 @@
 import { Observable } from 'rxjs';
+import { DeferredPromise } from '../lib';
 
-import { MissingRequiredDependencyException } from './errors';
-import { InjectionToken, OneModule } from './module';
-import { Type } from './interfaces';
+export const noop = () => {};
 
-export interface DeferredPromise<T> extends Promise<T> {
-  resolve: () => void;
-  reject: () => void;
-}
-
-// Assertion
 export const isEmpty = (array: any[]) => !(array && array.length > 0);
 
 export function isPromise(val: any): val is Promise<any> {
@@ -56,24 +49,13 @@ export function isUndef(val: any): val is undefined {
   return typeof val === 'undefined';
 }
 
-export async function series<T>(promises: Promise<T>[]) {
+export async function runSeries<T>(promises: Promise<T>[]) {
   for (const promise of promises) {
     await promise;
   }
 }
 
-export function omit<T extends { [name: string]: any }>(
-  from: T,
-  ...by: any[]
-): T {
-  for (const key of by) {
-    delete from[key];
-  }
-
-  return from;
-}
-
-export function concat<T = Type<OneModule>>(...props: any[]): T[] {
+export function concat(...props: any[]): any[] {
   return [].concat(...props);
 }
 
@@ -102,7 +84,7 @@ export async function transformResult<T>(
   return await resultOrDeferred;
 }
 
-export function getValues<T, S = string>(
+export function getEntryValues<T, S = string>(
   entries: IterableIterator<[S, T]> | Array<[S, T]>,
 ): T[] {
   return (<Array<[S, T]>>[...entries]).map<T>(([_, value]) => value);
@@ -133,6 +115,10 @@ export function pick<T>(from: any[], by: any[]): T[] {
   return from.filter(f => by.includes(f));
 }
 
+export function omit<T>(from: any[], by: any[]): T[] {
+  return from.filter(f => !by.includes(f));
+}
+
 /*export function isNode() {
   return (
     !isNil(<any>process) &&
@@ -141,6 +127,6 @@ export function pick<T>(from: any[], by: any[]): T[] {
   );
 }*/
 
-export async function getDeferred<T>(value: Promise<T> | T): Promise<T> {
+export async function getDeferred<T>(value: any): Promise<T> {
   return isPromise(value) ? await value : value;
 }

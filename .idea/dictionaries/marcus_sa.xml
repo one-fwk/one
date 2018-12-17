@@ -2,6 +2,15 @@
   <dictionary name="marcus-sa">
     <words>
       <w>axios</w>
+      <w>deps</w>
+      <w>downlevel</w>
+      <w>falsy</w>
+      <w>identifer</w>
+      <w>injectables</w>
+      <w>interop</w>
+      <w>jsnext</w>
+      <w>rxjs</w>
+      <w>tsconfig</w>
     </words>
   </dictionary>
 </component>

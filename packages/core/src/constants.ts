@@ -5,9 +5,9 @@ export enum Metadata {
 }
 
 export enum Scopes {
-  SINGLETON,
-  TRANSIENT,
-  REQUEST,
+  SINGLETON = 'singleton',
+  TRANSIENT = 'transient',
+  REQUEST = 'request',
 }
 
 export enum ProviderTypes {
@@ -21,4 +21,4 @@ export enum ProviderTypes {
 export const SHARED_MODULE_METADATA = Symbol.for('Metadata<SharedModule>');
 export const IS_MODULE_METADATA = Symbol.for('Metadata<Module>');
 export const SCOPE_METADATA = Symbol.for('Metadata<Scope>');
-export const IS_PROVIDER_METADATA = Symbol.for('Metadata<Provider>');
+export const IS_INJECTABLE_METADATA = Symbol.for('Metadata<Injectable>');

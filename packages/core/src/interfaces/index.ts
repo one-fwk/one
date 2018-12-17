@@ -8,3 +8,5 @@ export * from './method-decorator-metadata.interface';
 export * from './provider.interface';
 export * from './module';
 export * from './factory-options.interface';
+export * from './events.interface';
+export * from './util.interface';

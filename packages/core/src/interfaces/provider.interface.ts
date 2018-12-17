@@ -1,26 +1,25 @@
-import { InjectionToken } from '../module';
 import { Type } from './type.interface';
-import { Dependency } from './module';
+import { Dependency, OpaqueToken } from './module';
 import { Scopes } from '../constants';
 
-export type Provider =
-  | ProvideToken<any>
-  | ValueProvider<any>
-  | FactoryProvider<any>
-  | ExistingProvider<any>
-  | ClassProvider<any>
-  | Dependency;
+export type Provider<T = any> =
+  | ProvideToken<T>
+  | ValueProvider<T>
+  | FactoryProvider<T>
+  | ExistingProvider<T>
+  | ClassProvider<T>
+  | Dependency<T>;
 
-export interface ClassProvider<T> extends ProvideToken<any>, MultiProvider {
+export interface ClassProvider<T> extends ProvideToken<T>, MultiProvider {
   useClass: Type<T>;
 }
 
 export interface ProvideToken<T> {
-  provide: InjectionToken<T> | Type<T>;
+  provide: OpaqueToken<T>;
 }
 
 export interface DepsProvider {
-  deps: Dependency[];
+  deps: Dependency<any>[];
 }
 
 export interface MultiProvider {
@@ -30,8 +29,12 @@ export interface MultiProvider {
 export interface MultiDepsProvider extends DepsProvider, MultiProvider {}
 
 export interface ExistingProvider<T> extends ProvideToken<T> {
-  useExisting: Type<T> | InjectionToken<T>;
+  useExisting: OpaqueToken<T>;
 }
+
+/*export interface ServiceProvider<T> extends ProvideToken<T> {
+  toService:
+}*/
 
 export interface ValueProvider<T> extends ProvideToken<T> {
   useValue: T;
@@ -41,6 +44,6 @@ export interface FactoryProvider<T>
   extends ProvideToken<T>,
     Partial<DepsProvider>,
     MultiProvider {
-  useFactory: (...args: any[]) => T | Promise<T>;
+  useFactory: (...args: any[]) => T;
   scope?: Scopes;
 }

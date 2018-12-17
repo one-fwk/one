@@ -1,10 +1,11 @@
 import { RuntimeException } from './runtime.exception';
+import { Registry } from '../../registry';
+import { InvalidProviderMessage } from '../messages';
 
 export class InvalidProviderException extends RuntimeException {
   constructor(provider: any) {
-    super(
-      `${provider.name ||
-        provider.toString()} is invalid. Must be an InjectionToken or class annotated with @Injectable()`,
-    );
+    const name = Registry.getProviderName(provider);
+
+    super(InvalidProviderMessage(name));
   }
 }

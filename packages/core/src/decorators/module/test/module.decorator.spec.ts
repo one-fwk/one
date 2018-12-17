@@ -47,8 +47,8 @@ describe('@Module()', () => {
     expect(
       test.container.getProvider(AppService, appModule.target),
     ).toBeInstanceOf(AppService);
-    expect(appModule.providers.get(AppService)).toBeInstanceOf(AppService);
-    expect(() => rootModule.providers.get(AppService)).toThrowError();
+    expect(appModule.injector.get(AppService)).toBeInstanceOf(AppService);
+    expect(() => rootModule.injector.get(AppService)).toThrowError();
   });
   it('should accept dynamic imports', () => {});
   it('should accept async dynamic imports', () => {});

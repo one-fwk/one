@@ -5,6 +5,5 @@
     "paths": {
       "@one/*": ["./*/src"]
     }
-  },
-  "exclude": ["node_modules", "examples", "*test"]
+  }
 }

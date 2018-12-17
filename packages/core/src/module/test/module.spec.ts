@@ -1,9 +1,10 @@
 import { OneModule } from '../module';
 import { OneContainer } from '../container';
-import { Module, Injectable } from '../../decorators';
+import { Inject, Module, Injectable } from '../../decorators';
 import { InjectionToken } from '../injection-token';
 import { ProviderTypes, Scopes } from '../../constants';
-import { MultiProviderException } from '../../errors/exceptions';
+import { MultiProviderException, UnknownExportException } from '../../errors';
+import { Injector, MODULE_REF } from '../../tokens';
 import { noop } from '../../util';
 import {
   ClassProvider,
@@ -30,6 +31,8 @@ describe('OneModule', () => {
   describe('getDependencies', () => {});
 
   describe('bindings', () => {
+    const TEST = Symbol.for('TestService');
+
     describe('bindProviders', () => {
       const TEST = new InjectionToken<void>('TEST');
 
@@ -42,12 +45,8 @@ describe('OneModule', () => {
       it('should throw MultiProviderException if providers with same identifier exists without multi property set', async () => {
         const error = new MultiProviderException(TEST.name.toString());
 
-        module.providers.add({
-          provide: TEST,
-        });
-        module.providers.add({
-          provide: TEST,
-        });
+        module.addProvider({ provide: TEST });
+        module.addProvider({ provide: TEST });
 
         await expect(module.bindProviders()).rejects.toThrowError(error);
       });
@@ -58,10 +57,28 @@ describe('OneModule', () => {
           multi: true,
         };
 
-        module.providers.add(provider);
-        module.providers.add(provider);
+        module.addProvider(provider);
+        module.addProvider(provider);
 
         await expect(module.bindProviders()).resolves.not.toThrow();
+      });
+    });
+
+    describe('bindValueProvider', () => {
+      it('should bind a string value', () => {
+        const useValue = 'Hello World';
+
+        module.bindValueProvider(TEST, { useValue });
+
+        expect(module.injector.get(TEST)).toEqual(useValue);
+      });
+
+      it('should bind any value', () => {
+        const useValue = undefined;
+
+        module.bindValueProvider(TEST, { useValue });
+
+        expect(module.injector.get(TEST)).toBeUndefined();
       });
     });
 
@@ -76,8 +93,6 @@ describe('OneModule', () => {
       });
 
       it('should be instance of TestService when using token as identifier', () => {
-        const TEST = Symbol.for('TestService');
-
         module.bindExistingProvider(TEST, provider);
 
         expect(module.injector.get(TEST)).toBeInstanceOf(TestService);
@@ -131,6 +146,75 @@ describe('OneModule', () => {
     });
   });
 
+  describe('validateExported', () => {
+    @Module()
+    class AnotherTestModule {}
+
+    it('should return token if provider exists', () => {
+      const spy = jest.spyOn(module, 'providerContainerHasToken');
+
+      module.addProvider(TestService);
+
+      expect(module.validateExported(TestService, TestService)).toBe(
+        TestService,
+      );
+      expect(spy).toHaveReturnedWith(true);
+    });
+
+    it('should return token if module import exists', () => {
+      const anotherTestModuleRef = new OneModule(
+        AnotherTestModule,
+        [],
+        container,
+      );
+
+      module.addImport(anotherTestModuleRef);
+
+      expect(
+        module.validateExported(AnotherTestModule, AnotherTestModule),
+      ).toBe(AnotherTestModule);
+    });
+
+    it('should throw UnknownExportException if export is not part of imports', () => {
+      const error = new UnknownExportException(
+        module.target.name,
+        AnotherTestModule.name,
+      );
+
+      expect(() =>
+        module.validateExported(AnotherTestModule, AnotherTestModule),
+      ).toThrowError(error);
+    });
+  });
+
+  describe('addGlobalProviders', () => {
+    it('should bind global providers to module', () => {
+      @Module()
+      class AnotherTestModule {
+        constructor(
+          readonly container: OneContainer,
+          readonly injector: Injector,
+          @Inject(MODULE_REF)
+          readonly moduleRef: OneModule,
+        ) {}
+      }
+
+      module = new OneModule(AnotherTestModule, [], container);
+      module.addGlobalProviders();
+
+      expect(module.injector.get(Injector)).toBe(module.injector);
+      expect(module.injector.get(MODULE_REF.name)).toBe(module);
+      expect(module.injector.get(OneContainer)).toBe(module.container);
+
+      module.injector.bind(AnotherTestModule).toSelf();
+
+      const anotherTestModule = module.injector.get(AnotherTestModule);
+      expect(anotherTestModule.container).toBe(module.container);
+      expect(anotherTestModule.injector).toBe(module.injector);
+      expect(anotherTestModule.moduleRef).toBe(module);
+    });
+  });
+
   describe('getRelatedProviders', () => {
     let catModule: OneModule;
 
@@ -153,6 +237,8 @@ describe('OneModule', () => {
       expect(providers.size).toBe(1);
       expect(providers.values().next().value).toBe(CatService);
     });
+
+    it('should be able to resolve Symbol', () => {});
 
     it('should get deep exported imports/providers', () => {});
   });

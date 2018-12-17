@@ -4,7 +4,7 @@ import { Registry } from '../../registry';
 import { OneModule } from '../../module';
 
 export class UnknownProviderException extends RuntimeException {
-  constructor(provider: Provider, module: Type<OneModule>) {
+  constructor(provider: any, module: Type<OneModule>) {
     const name = Registry.getProviderName(provider);
     super(`${name} could not be found in ${module.name}`);
   }

@@ -1,6 +1,8 @@
-import 'reflect-metadata';
 import { Registry } from '../registry';
-import { ProvideToken } from '../interfaces';
+import {
+  CircularDependencyException,
+  InvalidProviderException,
+} from '../errors';
 import {
   Module,
   Injectable,
@@ -10,7 +12,66 @@ import {
 } from '@one/core';
 
 describe('Registry', () => {
+  @Module()
+  class TestModule {}
+
+  @Injectable()
+  class TestService {}
+
+  const TEST = new InjectionToken<void>('TEST');
+
   beforeEach(() => Registry.clearLazyInjects());
+
+  describe('isInjectionToken', () => {
+    it('should return true with InjectionToken', () => {
+      expect(Registry.isInjectionToken(TEST)).toBeTrue();
+    });
+    it('should return false with anything else', () => {
+      expect(Registry.isInjectionToken(TestService)).toBeFalse();
+    });
+  });
+
+  describe('isProvider', () => {
+    it('should return true with Injectable', () => {
+      expect(Registry.isProvider(TestService)).toBeTrue();
+    });
+
+    it('should return true with InjectionToken', () => {
+      expect(Registry.isProvider(TEST));
+    });
+
+    it('should return false with Module', () => {
+      expect(Registry.isProvider(TestModule)).toBeFalse();
+    });
+
+    it('should return false with anything else', () => {
+      expect(Registry.isProvider(null as any)).toBeFalse();
+    });
+  });
+
+  describe('assertProvider', () => {
+    it('should throw CircularDependencyException if provider is falsy', () => {
+      const error = new CircularDependencyException(undefined as any);
+
+      expect(() => Registry.assertProvider(undefined)).toThrowError(error);
+      expect(error).toMatchSnapshot();
+    });
+
+    it('should throw InvalidProviderException if invalid provider', () => {
+      const error = new InvalidProviderException(TestModule);
+
+      expect(() => Registry.assertProvider(TestModule)).toThrowError(error);
+      expect(error).toMatchSnapshot();
+    });
+
+    it('should succeed with InjectionToken', () => {
+      expect(() => Registry.assertProvider(TEST)).not.toThrow();
+    });
+
+    it('should succeed with Injectable', () => {
+      expect(() => Registry.assertProvider(TestService)).not.toThrow();
+    });
+  });
 
   describe('getLazyInjects', () => {
     it('should get lazy injects', () => {
@@ -18,8 +79,7 @@ describe('Registry', () => {
 
       @Injectable()
       class Nest {
-        @Inject(ref)
-        private readonly nest!: Nest;
+        @Inject(ref) nest!: Nest;
       }
 
       const lazyInjects = Registry.getLazyInjects(Nest);
@@ -53,121 +113,141 @@ describe('Registry', () => {
   });
 
   describe('getForwardRef', () => {
-    it('should get provider', () => {
-      @Injectable()
-      class Nest {}
+    it('should return Injectable', () => {
+      const ref = forwardRef(() => TestService);
 
-      const ref = forwardRef(() => Nest);
-      expect(Registry.getForwardRef(ref)).toEqual(Nest);
-      expect(Registry.getForwardRef(Nest)).toEqual(Nest);
+      expect(Registry.getForwardRef(ref)).toBe(TestService);
+      expect(Registry.getForwardRef(TestService)).toBe(TestService);
     });
   });
 
   describe('getProviderToken', () => {
-    let spy: jest.SpyInstance;
+    it('should return Token from Injectable', () => {
+      const token = Registry.getProviderToken(TestService);
 
-    beforeEach(() => {
-      spy = jest.spyOn(Registry, 'getInjectionToken');
+      expect(token).toBe(TestService);
+      expect(token).toMatchSnapshot();
     });
 
-    afterEach(() => {
-      // spy.mockRestore();
-      spy.mockClear();
+    it('should return Token from ProvideToken', () => {
+      const token = Registry.getProviderToken({
+        provide: TEST,
+      });
+
+      expect(token).toEqual(TEST.name);
+      expect(token).toMatchSnapshot();
     });
 
-    it('should get token from Injectable', () => {
-      @Injectable()
-      class Nest {}
+    it('should return Token from InjectionToken', () => {
+      const token = Registry.getProviderToken(TEST);
 
-      const token = Registry.getProviderToken(Nest);
-
-      expect(token).toEqual(Nest);
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy).toHaveBeenCalledWith(Nest);
+      expect(token).toEqual(TEST.name);
+      expect(token).toMatchSnapshot();
     });
 
-    it('should get token from ProvideToken', () => {
-      const NEST = new InjectionToken<void>('NEST');
+    it('should return Token from forwardRef', () => {
+      const token = Registry.getProviderToken(forwardRef(() => TestService));
 
-      const provider: ProvideToken = {
-        provide: NEST,
-      };
+      expect(token).toEqual(TestService);
+      expect(token).toMatchSnapshot();
+    });
+  });
 
-      const token = Registry.getProviderToken(provider);
+  describe('getToken', () => {
+    it('should return Token from Injectable', () => {
+      const token = Registry.getToken(TestService);
 
-      expect(token).toEqual(NEST.name);
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy).toHaveBeenCalledWith(NEST);
+      expect(token).toBe(TestService);
+      expect(token).toMatchSnapshot();
+    });
+
+    it('should return Token from InjectionToken', () => {
+      const token = Registry.getToken(TEST);
+
+      expect(token).toEqual(TEST.name);
+      expect(token).toMatchSnapshot();
+    });
+  });
+
+  describe('getOpaqueToken', () => {
+    it('should return InjectionToken from ProvideToken', () => {
+      const token = Registry.getOpaqueToken({
+        provide: TEST,
+      });
+
+      expect(token).toBe(TEST);
+      expect(token).toMatchSnapshot();
+    });
+
+    it('should return any', () => {
+      const token = Registry.getOpaqueToken(TestService);
+
+      expect(token).toBe(TestService);
+      expect(token).toMatchSnapshot();
     });
   });
 
   describe('getProviderName', () => {
-    let spy: jest.SpyInstance;
+    it('should get name from ForwardRef', () => {
+      const name = Registry.getProviderName(forwardRef(() => TestService));
 
-    beforeEach(() => {
-      spy = jest.spyOn(Registry, 'getProviderToken');
+      expect(name).toEqual(TestService.name);
+      expect(name).toMatchSnapshot();
     });
 
-    afterEach(() => {
-      spy.mockClear();
+    it('should get name from ProvideToken', () => {
+      const name = Registry.getProviderName({
+        provide: TEST,
+      });
+
+      expect(name).toEqual(TEST.name.toString());
+      expect(name).toMatchSnapshot();
     });
 
     it('should get name from InjectionToken', () => {
-      const token = new InjectionToken<void>('token');
-      const name = Registry.getProviderName(token);
+      const name = Registry.getProviderName(TEST);
 
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy).toHaveBeenCalledWith(token);
-      expect(token.name.toString()).toEqual(name);
+      expect(name).toEqual(TEST.name.toString());
+      expect(name).toMatchSnapshot();
     });
 
     it('should get name from Injectable', () => {
-      class Nest {}
-      const name = Registry.getProviderName(Nest);
+      const name = Registry.getProviderName(TestService);
 
-      expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy).toHaveBeenCalledWith(Nest);
-      expect(Nest.name).toEqual(name);
+      expect(name).toEqual(TestService.name);
+      expect(name).toMatchSnapshot();
     });
   });
 
-  describe('isModule', () => {
-    @Module()
-    class OneModule {}
+  describe('isFactoryProvider', () => {});
 
-    it('should succeed with @Module() decorated', () => {
-      expect(Registry.isModule(OneModule)).toBeTrue();
+  describe('isModule', () => {
+    it('should return true when class is decorated with @Module()', () => {
+      expect(Registry.isModule(TestModule)).toBeTrue();
     });
 
-    it('should succeed with DynamicModule', () => {
+    it('should return true with DynamicModule', () => {
       expect(
         Registry.isModule({
-          module: OneModule,
+          module: TestModule,
         }),
       ).toBeTrue();
     });
 
-    it('should fail with ProvideToken', () => {
-      const NEST = new InjectionToken<void>('NEST');
-
+    it('should return false with ProvideToken', () => {
       expect(
         Registry.isModule({
-          provide: NEST,
+          provide: TEST,
         }),
       ).toBeFalse();
     });
 
-    it('should fail with Injectable', () => {
-      @Injectable()
-      class Nest {}
-
-      expect(Registry.isModule(Nest)).toBeFalse();
+    it('should return false with Injectable', () => {
+      expect(Registry.isModule(TestService)).toBeFalse();
     });
 
-    it('should fail with InjectionToken', () => {
-      const NEST = new InjectionToken<void>('NEST');
-
-      expect(Registry.isModule(NEST)).toBeFalse();
+    it('should return false with InjectionToken', () => {
+      expect(Registry.isModule(TEST)).toBeFalse();
     });
   });
 });

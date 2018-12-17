@@ -1,0 +1,109 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OneContainer addModule should not add module if already exists in collection 1`] = `
+Array [
+  Array [
+    "586e98de7d09e92da6f61c63d5e0cb3360797533",
+    OneModule {
+      "container": OneContainer {
+        "dynamicModulesMetadata": Map {},
+        "globalModules": Set {},
+        "moduleCompiler": ModuleCompiler {
+          "moduleTokenFactory": ModuleTokenFactory {},
+        },
+        "moduleOrder": Set {},
+        "modules": Map {
+          "586e98de7d09e92da6f61c63d5e0cb3360797533" => [Circular],
+        },
+        "providerTokens": Set {},
+      },
+      "created": Promise {
+        "reject": [Function],
+        "resolve": [Function],
+      },
+      "exports": Set {},
+      "factoryValues": Map {},
+      "imports": Set {},
+      "injector": Injector {
+        "_bindingDictionary": Lookup {
+          "_map": Map {
+            [Function] => Array [
+              Binding {
+                "activated": false,
+                "cache": [Circular],
+                "constraint": [Function],
+                "dynamicValue": null,
+                "factory": null,
+                "id": 1,
+                "implementationType": null,
+                "onActivation": null,
+                "provider": null,
+                "scope": "Transient",
+                "serviceIdentifier": [Function],
+                "type": "ConstantValue",
+              },
+            ],
+            [Function] => Array [
+              Binding {
+                "activated": false,
+                "cache": OneContainer {
+                  "dynamicModulesMetadata": Map {},
+                  "globalModules": Set {},
+                  "moduleCompiler": ModuleCompiler {
+                    "moduleTokenFactory": ModuleTokenFactory {},
+                  },
+                  "moduleOrder": Set {},
+                  "modules": Map {
+                    "586e98de7d09e92da6f61c63d5e0cb3360797533" => [Circular],
+                  },
+                  "providerTokens": Set {},
+                },
+                "constraint": [Function],
+                "dynamicValue": null,
+                "factory": null,
+                "id": 2,
+                "implementationType": null,
+                "onActivation": null,
+                "provider": null,
+                "scope": "Transient",
+                "serviceIdentifier": [Function],
+                "type": "ConstantValue",
+              },
+            ],
+            Symbol(InjectionToken<Ref<Module>>) => Array [
+              Binding {
+                "activated": false,
+                "cache": [Circular],
+                "constraint": [Function],
+                "dynamicValue": null,
+                "factory": null,
+                "id": 3,
+                "implementationType": null,
+                "onActivation": null,
+                "provider": null,
+                "scope": "Transient",
+                "serviceIdentifier": Symbol(InjectionToken<Ref<Module>>),
+                "type": "ConstantValue",
+              },
+            ],
+          },
+        },
+        "_metadataReader": MetadataReader {},
+        "_middleware": null,
+        "_snapshots": Array [],
+        "id": 0,
+        "options": Object {
+          "autoBindInjectable": false,
+          "defaultScope": "Transient",
+          "skipBaseClassChecks": true,
+        },
+        "parent": null,
+      },
+      "lazyInject": [Function],
+      "providers": Set {},
+      "scope": Array [],
+      "target": [Function],
+    },
+  ],
+]
+`;

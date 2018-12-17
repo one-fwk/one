@@ -1,6 +1,6 @@
 import { Container } from 'inversify';
 
-import { InjectionToken } from './module';
+import { InjectionToken } from './module/injection-token';
 import { Type } from './interfaces';
 import { Injectable } from './decorators';
 

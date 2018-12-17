@@ -4,7 +4,8 @@ import { Reflector } from '../reflector';
 import { Registry } from '../registry';
 import { OneModule } from './module';
 import { Metadata } from '../constants';
-import { isNil, flatten, concat, getValues } from '../util';
+import { isNil, flatten, concat, getEntryValues } from '../util';
+import { Injectable } from '../decorators';
 import {
   UnknownModuleException,
   InvalidModuleException,
@@ -13,9 +14,9 @@ import {
 } from '../errors';
 import {
   Dependency,
-  DynamicModule,
   ModuleExport,
   ModuleImport,
+  ModuleMetadata,
   Provider,
   Token,
   Type,
@@ -25,16 +26,43 @@ export interface StrictSelect {
   strict?: boolean;
 }
 
+@Injectable()
 export class OneContainer {
+  private readonly dynamicModulesMetadata = new Map<string, ModuleMetadata>();
   private readonly moduleCompiler = new ModuleCompiler();
+
+  /**
+   * Global modules that should be imported in every scope
+   */
   private readonly globalModules = new Set<OneModule>();
   private readonly modules = new Map<string, OneModule>();
-  public readonly moduleOrder = new Set<OneModule>();
-  public readonly providerTokens: Token[] = [];
-  private readonly dynamicModulesMetadata = new Map<
-    string,
-    Partial<DynamicModule>
-  >();
+
+  /**
+   * Set of modules in the order they're created
+   */
+  private readonly createdModules = new Set<OneModule>();
+
+  /**
+   * Used to detect whether or not a token has already been provided
+   * to ensure the "multi" property needs to be set
+   */
+  private readonly providerTokens = new Set<Token>();
+
+  public isModuleCreated(module: OneModule) {
+    return this.createdModules.has(module);
+  }
+
+  public addCreatedModule(module: OneModule) {
+    this.createdModules.add(module);
+  }
+
+  public hasProviderToken(token: Token) {
+    return this.providerTokens.has(token);
+  }
+
+  public addProviderToken(token: Token) {
+    this.providerTokens.add(token);
+  }
 
   private getModulesFrom(module?: Type<OneModule>) {
     return !isNil(module)
@@ -43,13 +71,17 @@ export class OneContainer {
   }
 
   public isProviderBound(
-    provider: Type<any> | InjectionToken<any>,
+    provider: Type | InjectionToken<any>,
     module?: Type<OneModule>,
   ) {
-    const token = Registry.getProviderToken(provider);
-    return this.getModulesFrom(module).some(({ providers }) =>
-      providers.isBound(token),
+    const token = Registry.getToken(provider);
+    return this.getModulesFrom(module).some(({ injector }) =>
+      injector.isBound(token),
     );
+  }
+
+  public getRootModule() {
+    return this.modules.values().next().value;
   }
 
   public replace(
@@ -62,54 +94,54 @@ export class OneContainer {
   }
 
   public getProvider<T>(
-    provider: Token | Type<T> | InjectionToken<T>,
+    provider: Token | Provider,
     scope?: Type<OneModule>,
     { strict }: StrictSelect = {},
   ): T {
-    const token = Registry.getProviderToken(provider);
+    const token = Registry.getProviderToken(<any>provider);
 
     if (strict) {
-      const module = this.getModule(scope!);
-      if (module!.providers.isBound(token)) {
-        return module!.providers.get(token);
+      const { injector } = this.getModule(scope!)!;
+
+      if (injector.isBound(token)) {
+        return injector.get<T>(token);
+      } else {
+        throw new Error('Container.getProvider()');
       }
     } else {
-      for (const { providers } of this.modules.values()) {
-        if (providers.isBound(token)) {
-          return providers.get<T>(token);
+      for (const { injector } of this.modules.values()) {
+        if (injector.isBound(token)) {
+          return injector.get<T>(token);
         }
       }
     }
 
-    throw new UnknownProviderException(<any>provider, scope!);
+    throw new UnknownProviderException(provider, scope!);
   }
 
-  public getAllProviders<T>(
-    provider: InjectionToken<T>,
-    target?: Type<OneModule>,
-  ) {
+  public getAllProviders<T>(provider: InjectionToken<T>, target?: Type<any>) {
     if (!Registry.isInjectionToken(provider)) {
       throw new MissingInjectionTokenException('Container.getAllProviders()');
     }
 
-    const token = Registry.getProviderToken(provider);
+    const token = Registry.getToken(provider);
 
-    return flatten<T | Promise<Type<Provider>>>(
-      this.getModulesFrom(target).map(({ providers }) =>
-        providers.isBound(token) ? providers.getAll(token) : [],
+    return flatten<T | Promise<Type<T>>>(
+      this.getModulesFrom(target).map(({ injector }) =>
+        injector.isBound(token) ? injector.getAll(token) : [],
       ),
     );
   }
 
   public getModuleValues() {
-    return getValues<OneModule>(this.modules.entries());
+    return getEntryValues<OneModule>(this.modules.entries());
   }
 
-  public hasModule(module: Type<any>) {
+  public hasModule(module: Type) {
     return this.getModuleValues().some(({ target }) => target === module);
   }
 
-  public getModule(module: Type<any>): OneModule | undefined {
+  public getModule(module: Type): OneModule | undefined {
     return this.getModuleValues().find(({ target }) => target === module);
   }
 
@@ -121,8 +153,8 @@ export class OneContainer {
     return <OneModule>this.modules.get(token);
   }
 
-  public getReversedModules() {
-    return [...this.modules.entries()].reverse();
+  public getCreatedModules() {
+    return this.createdModules;
   }
 
   public getModules() {
@@ -143,17 +175,14 @@ export class OneContainer {
     this.globalModules.add(module);
   }
 
-  public async addModule(
-    module: Partial<ModuleImport>,
-    scope: Type<OneModule>[] = [],
-  ) {
+  public async addModule(module: ModuleImport, scope: Type<OneModule>[] = []) {
     if (!module) throw new InvalidModuleException(scope);
 
     const {
       target,
       dynamicMetadata,
       token,
-    } = await this.moduleCompiler.compile(<any>module, scope);
+    } = await this.moduleCompiler.compile(module, scope);
     if (this.modules.has(token)) return;
 
     const oneModule = new OneModule(target, scope, this);
@@ -161,29 +190,31 @@ export class OneContainer {
     this.modules.set(token, oneModule);
 
     const modules = concat(scope, target);
-    this.addDynamicMetadata(token, dynamicMetadata!, modules);
+    await this.addDynamicMetadata(token, dynamicMetadata, modules);
 
     if (Reflector.isGlobalModule(target)) {
       this.addGlobalModule(oneModule);
     }
   }
 
-  private addDynamicMetadata(
+  private async addDynamicMetadata(
     token: string,
-    dynamicModuleMetadata: Partial<DynamicModule>,
+    dynamicModuleMetadata: ModuleMetadata | undefined,
     scope: Type<OneModule>[],
   ) {
     if (!dynamicModuleMetadata) return;
 
     this.dynamicModulesMetadata.set(token, dynamicModuleMetadata);
-    this.addDynamicModules(dynamicModuleMetadata.imports, scope);
+    await this.addDynamicModules(dynamicModuleMetadata.imports, scope);
   }
 
-  private addDynamicModules(
+  private async addDynamicModules(
     modules: ModuleImport[] = [],
     scope: Type<OneModule>[],
   ) {
-    modules.forEach(module => this.addModule(module, scope));
+    for (const module of modules) {
+      await this.addModule(module, scope);
+    }
   }
 
   public bindGlobalScope() {
@@ -191,24 +222,26 @@ export class OneContainer {
   }
 
   private bindGlobalsToImports(module: OneModule) {
-    this.globalModules.forEach(globalModule =>
-      this.bindGlobalModuleToModule(module, globalModule),
-    );
+    this.globalModules.forEach(globalModule => {
+      this.bindGlobalModuleToModule(module, globalModule);
+    });
   }
 
   private bindGlobalModuleToModule(module: OneModule, globalModule: OneModule) {
-    if (module === globalModule) return;
+    if (globalModule === module) return;
     module.addImport(globalModule);
   }
 
-  public async addImport(relatedModule: Partial<ModuleImport>, token: string) {
-    if (!this.modules.has(token)) return;
+  public async addImport(relatedModule: ModuleImport, token: string) {
+    if (!this.modules.has(token)) {
+      throw new Error('addImport');
+    }
 
     const module = this.getModuleByToken(token);
     const scope = concat(module.scope, module.target);
 
     const { token: relatedModuleToken } = await this.moduleCompiler.compile(
-      <any>relatedModule,
+      relatedModule,
       scope,
     );
 

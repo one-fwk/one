@@ -1,25 +1,28 @@
-import 'reflect-metadata';
-import { ReflectorFactory } from '@one/core';
+import { Reflector, Type } from '@one/core';
 
 describe('Reflector', () => {
-  class Nest {}
-
-  let reflector: ReflectorFactory;
+  let Nest: Type<any>;
 
   beforeEach(() => {
-    reflector = new ReflectorFactory(Nest);
+    Nest = class {};
+  });
+
+  describe('isInjectable', () => {
+    it('should not throw error if target is undefined', () => {
+      expect(() => Reflector.isInjectable(undefined)).not.toThrow();
+    });
   });
 
   describe('get', () => {
     it('should get metadata', () => {
       Reflect.defineMetadata('NEST', 'nest', Nest);
-      expect(reflector.get('NEST')).toEqual('nest');
+      expect(Reflector.get('NEST', Nest)).toEqual('nest');
     });
   });
 
   describe('set', () => {
     it('should set metadata', () => {
-      reflector.set('NEST', 'nest');
+      Reflector.set('NEST', 'nest', Nest);
       expect(Reflect.getMetadata('NEST', Nest)).toEqual('nest');
     });
   });
@@ -27,7 +30,7 @@ describe('Reflector', () => {
   describe('has', () => {
     it('should have metadata', () => {
       Reflect.defineMetadata('NEST', 'nest', Nest);
-      expect(reflector.has('NEST')).toBeTruthy();
+      expect(Reflector.has('NEST', Nest)).toBeTruthy();
     });
   });
 
@@ -36,10 +39,13 @@ describe('Reflector', () => {
       const ONE = 'ONE';
       const TWO = 'TWO';
 
-      reflector.defineByKeys({
-        [ONE]: 'one',
-        [TWO]: 'two',
-      });
+      Reflector.defineByKeys(
+        {
+          [ONE]: 'one',
+          [TWO]: 'two',
+        },
+        Nest,
+      );
 
       expect(Reflect.getMetadata(ONE, Nest)).toEqual('one');
       expect(Reflect.getMetadata(TWO, Nest)).toEqual('two');

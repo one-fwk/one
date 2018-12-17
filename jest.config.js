@@ -14,5 +14,5 @@ module.exports = {
       tsConfig: '<rootDir>/tsconfig.spec.json',
     },
   },
-  testMatch: ['<rootDir>/**/*.(spec|test).+(ts|tsx)'],
+  testMatch: ['<rootDir>/packages/**/*.spec.ts'],
 };
