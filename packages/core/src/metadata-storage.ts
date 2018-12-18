@@ -1,5 +1,5 @@
 import { TargetRef, Type, Provider, TargetPropertyRef } from './interfaces';
-import { Utils } from './util';
+import { isNil } from './util';
 
 export type Target = Type<Provider> | Function;
 
@@ -22,7 +22,7 @@ export class BaseMetadataStorage {
       );
     };
 
-    return Utils.isNil(propertyKey)
+    return isNil(propertyKey)
       ? this.findByTarget(metadata, target)
       : findByProperty();
   }
@@ -38,7 +38,7 @@ export class BaseMetadataStorage {
       );
     };
 
-    return Utils.isNil(propertyKey)
+    return isNil(propertyKey)
       ? this.filterByTarget(metadata, target)
       : filterByProperty();
   }

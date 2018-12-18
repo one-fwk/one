@@ -1,5 +1,6 @@
 export class InjectionToken<T> {
-  public readonly name = Symbol.for(`InjectionToken<${this.desc}>`);
+  public readonly context = `InjectionToken<${this.desc}>`;
+  public readonly name = Symbol.for(this.context);
 
   constructor(private readonly desc: string) {}
 }

@@ -1,11 +1,13 @@
 import 'reflect-metadata';
 
-import { Type, Provider } from './interfaces';
+import { Type } from './interfaces';
 import { OneModule } from './module';
 import {
   SCOPE_METADATA,
-  PROVIDER_METADATA,
+  IS_INJECTABLE_METADATA,
+  IS_MODULE_METADATA,
   SHARED_MODULE_METADATA,
+  Metadata,
 } from './constants';
 
 export class Reflector {
@@ -17,14 +19,14 @@ export class Reflector {
     Object.keys(metadata)
       .filter(p => !exclude.includes(p))
       .forEach(property => {
-        Reflect.defineMetadata(property, metadata[property], target);
+        this.set(property, metadata[property], target);
       });
 
     return target;
   }
 
   public static get(metadataKey: string | symbol, target: any) {
-    return Reflect.getMetadata(metadataKey, target) || [];
+    return target instanceof Object && Reflect.getMetadata(metadataKey, target);
   }
 
   public static set(
@@ -37,18 +39,31 @@ export class Reflector {
   }
 
   public static has(metadataKey: string | symbol, target: any) {
-    return Reflect.hasMetadata(metadataKey, target);
+    return target instanceof Object && Reflect.hasMetadata(metadataKey, target);
   }
 
-  public static isGlobalModule(target: Type<OneModule>) {
-    return Reflect.hasMetadata(SHARED_MODULE_METADATA, target);
+  public static isGlobalModule(target: any) {
+    return this.has(SHARED_MODULE_METADATA, target);
   }
 
-  public static isProvider(target: Type<Provider | OneModule>) {
-    return Reflect.hasMetadata(PROVIDER_METADATA, target);
+  public static isModule(target: any) {
+    return this.has(IS_MODULE_METADATA, target);
   }
 
-  public static resolveProviderScope(provider: Type<Provider>) {
-    return Reflect.getMetadata(SCOPE_METADATA, provider);
+  public static isInjectable(target: any) {
+    return this.has(IS_INJECTABLE_METADATA, target);
+  }
+
+  public static getModuleScope(target: Type<OneModule>) {
+    const scope = this.get(SHARED_MODULE_METADATA, target);
+    return scope ? scope : 'global';
+  }
+
+  public static getModuleImports(target: Type) {
+    return this.get(Metadata.IMPORTS, target) || [];
+  }
+
+  public static getProviderScope(provider: Type) {
+    return this.get(SCOPE_METADATA, provider);
   }
 }

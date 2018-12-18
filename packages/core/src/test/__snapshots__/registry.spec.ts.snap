@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Registry assertProvider should throw CircularDependencyException if provider is falsy 1`] = `[Error: A circular dependency has been detected inside undefined. Please, make sure that each side of a bidirectional relationships are decorated with "forwardRef()".]`;
+
+exports[`Registry assertProvider should throw InvalidProviderException if invalid provider 1`] = `[Error: TestModule is an invalid provider. Must be an InjectionToken or class annotated with @Injectable()]`;
+
+exports[`Registry getForwardRef should return Injectable 1`] = `"TestService"`;
+
+exports[`Registry getForwardRef should return Injectable 2`] = `"TestService"`;
+
+exports[`Registry getProviderName should get name from ForwardRef 1`] = `"TestService"`;
+
+exports[`Registry getProviderName should get name from Injectable 1`] = `"TestService"`;
+
+exports[`Registry getProviderName should get name from InjectionToken 1`] = `"Symbol(InjectionToken<TEST>)"`;
+
+exports[`Registry getProviderName should get name from ProvideToken 1`] = `"Symbol(InjectionToken<TEST>)"`;

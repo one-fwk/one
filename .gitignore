@@ -61,6 +61,5 @@ typings/
 .next
 
 # Build directories
-*lib
-*.rpt2_cache
-*dist
+lib/
+.rpt2_cache

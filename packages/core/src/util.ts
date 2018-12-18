@@ -1,210 +1,130 @@
 import { Observable } from 'rxjs';
+import { DeferredPromise } from './interfaces';
 
-import { MissingRequiredDependencyException } from './errors';
-import { InjectionToken, OneModule } from './module';
-import { Type } from './interfaces';
+export const noop = () => {};
 
-export interface DeferredPromise<T> extends Promise<T> {
-  resolve: () => void;
-  reject: () => void;
+export const isEmpty = (array: any[]) => !(array && array.length > 0);
+
+export function isPromise(val: any): val is Promise<any> {
+  return val instanceof Promise || (val && isFunc(val.then));
 }
 
-export class Utils {
-  public static isNode() {
-    return (
-      !this.isNil(process) &&
-      this.isObject((<any>process).release) &&
-      (<any>process).release.name === 'node'
-    );
+export function isObservable(val: any): val is Observable<any> {
+  return val instanceof Observable || (val && isFunc(val.subscribe));
+}
+
+export function isSymbol(val: any): val is symbol {
+  return typeof val === 'symbol';
+}
+
+export function isNum(val: any): val is number {
+  return typeof val === 'number';
+}
+
+export function isObj(val: any): val is Object {
+  return typeof val === 'object';
+}
+
+export function isNil(val: any): val is undefined | null {
+  return isUndef(val) || val === null;
+}
+
+export function isString(val: any): val is string {
+  return typeof val === 'string';
+}
+
+export function isBool(val: any): val is boolean {
+  return typeof val === 'boolean';
+}
+
+export function isIterable(val: any): val is Iterable<any> {
+  return val && isFunc(val[Symbol.iterator]);
+}
+
+export function isFunc(val: any): val is Function {
+  return typeof val === 'function';
+}
+
+export function isUndef(val: any): val is undefined {
+  return typeof val === 'undefined';
+}
+
+export async function runSeries<T>(promises: Promise<T>[]) {
+  for (const promise of promises) {
+    await promise;
+  }
+}
+
+export function concat(...props: any[]): any[] {
+  return [].concat(...props);
+}
+
+export function createDeferredPromise<T>(): DeferredPromise<T> {
+  let resolve!: () => void;
+  let reject!: () => void;
+
+  const deferred: any = new Promise((_resolve, _reject) => {
+    resolve = _resolve;
+    reject = _reject;
+  });
+
+  deferred.resolve = resolve;
+  deferred.reject = reject;
+
+  return deferred;
+}
+
+export async function transformResult<T>(
+  resultOrDeferred: T | Promise<T> | Observable<T>,
+): Promise<T> {
+  if (isObservable(resultOrDeferred)) {
+    return await (<Observable<T>>resultOrDeferred).toPromise();
   }
 
-  public static processExit(code: number = 0) {
-    if (this.isNode()) {
-      process.exit(code);
-    }
-  }
+  return await resultOrDeferred;
+}
 
-  public static isElectron() {
-    // Renderer process
-    if (
-      !this.isNil(window) &&
-      this.isObject((<any>window).process) &&
-      (<any>window).process.type === 'renderer'
-    )
-      return true;
+export function getEntryValues<T, S = string>(
+  entries: IterableIterator<[S, T]> | Array<[S, T]>,
+): T[] {
+  return (<Array<[S, T]>>[...entries]).map<T>(([_, value]) => value);
+}
 
-    // Main process
-    if (
-      !this.isNil(process) &&
-      this.isObject(process.versions) &&
-      !this.isNil((<any>process.versions).electron)
-    )
-      return true;
+export function promisify<F extends Function>(fn: F) {
+  return <T>(...args: any[]): Promise<T> => {
+    if (!isFunc(fn))
+      throw new Error(`Can't promisify a non function: ${JSON.stringify(fn)}`);
 
-    // Detect the user agent when the `nodeIntegration` option is set to true
-    return (
-      this.isObject(navigator) &&
-      this.isString(navigator.userAgent) &&
-      (<any>navigator.userAgent).includes('Electron')
-    );
-  }
-
-  public static async loadPackage<T>(
-    name: string,
-    context: string,
-  ): Promise<T> {
-    try {
-      return await require(name);
-    } catch (e) {
-      throw new MissingRequiredDependencyException(name, context);
-    }
-  }
-
-  public static isEmpty(array: any[]){
-    return !(array && array.length > 0);
-  }
-
-  public static async getDeferred<T>(value: any): Promise<T> {
-    return this.isPromise(value) ? await value : value;
-  }
-
-  public static isIterable(val: any): val is Iterable<any> {
-    return val && this.isFunction(val[Symbol.iterator]);
-  }
-
-  public static isPromise(val: any): val is Promise<any> {
-    return val && this.isFunction(val.then);
-  }
-
-  public static isObservable(val: any): val is Observable<any> {
-    return val && this.isFunction(val.subscribe);
-  }
-
-  public static isSymbol(val: any): val is symbol {
-    return typeof val === 'symbol';
-  }
-
-  public static isNamedFunction(
-    val: any,
-  ): val is Type<any> | InjectionToken<any> | Function {
-    return (
-      val &&
-      !!val.name &&
-      (this.isFunction(val) || this.isFunction(val.constructor))
-    );
-  }
-
-  public static isFunction(val: any): val is Function {
-    return typeof val === 'function';
-  }
-
-  public static isNumber(val: any): val is number {
-    return typeof val === 'number';
-  }
-
-  public static isBoolean(val: any): val is boolean {
-    return typeof val === 'boolean';
-  }
-
-  public static isString(val: any): val is string {
-    return typeof val === 'string';
-  }
-
-  public static isNil(val: any): val is undefined | null {
-    return this.isUndefined(val) || val === null;
-  }
-
-  public static isObject(val: any): val is Object {
-    return typeof val === 'object';
-  }
-
-  public static isUndefined(val: any): val is undefined {
-    return typeof val === 'undefined';
-  }
-
-  public static promisify<F extends Function>(fn: F) {
-    return <T>(...args: any[]): Promise<T> => {
-      if (!this.isFunction(fn))
-        throw new Error(
-          `Can't promisify a non function: ${JSON.stringify(fn)}`,
-        );
-
-      return new Promise((resolve, reject) => {
-        fn(...args, (err: Error, ...rest: any[]) => {
-          if (err) return reject(err);
-          resolve(...rest);
-        });
+    return new Promise((resolve, reject) => {
+      fn(...args, (err: Error, ...rest: any[]) => {
+        if (err) return reject(err);
+        resolve(...rest);
       });
-    };
-  }
-
-  public static getValues<T, S = string>(
-    entries: IterableIterator<[S, T]> | Array<[S, T]>,
-  ): T[] {
-    // const iterable = this.isIterable(entries);
-
-    return (<Array<[S, T]>>[...entries]).map<T>(([_, value]) => value);
-  }
-
-  public static concat<T = Type<OneModule>>(...props: any[]): T[] {
-    return [].concat(...props);
-  }
-
-  public static flatten<T>(arr: any[][]): T[] {
-    return arr.reduce((previous, current) => [...previous, ...current], []);
-  }
-
-  public static omit<T extends { [name: string]: any }>(
-    from: T,
-    ...by: any[]
-  ): T {
-    for (const key of by) {
-      delete from[key];
-    }
-
-    return from;
-  }
-
-  public static async series<T>(promises: Promise<T>[]) {
-    for (const promise of promises) {
-      await promise;
-    }
-  }
-
-  public static filterWhen<T>(
-    arr: any[],
-    statement: any,
-    filter: (value: T, index: number, array: T[]) => boolean,
-  ) {
-    return !!statement ? arr.filter(filter) : arr;
-  }
-
-  public static pick<T>(from: any[], by: any[]): T[] {
-    return from.filter(f => by.includes(f));
-  }
-
-  public static createDeferredPromise<T>(): DeferredPromise<T> {
-    let resolve!: () => void;
-    let reject!: () => void;
-
-    const deferred: any = new Promise((_resolve, _reject) => {
-      resolve = _resolve;
-      reject = _reject;
     });
+  };
+}
 
-    deferred.resolve = resolve;
-    deferred.reject = reject;
+export function flatten<T>(arr: any[]): T[] {
+  return arr.reduce(
+    (previous, current) => [...previous, ...current],
+    [] as any[],
+  );
+}
 
-    return deferred;
-  }
+export function pick<T>(from: any[], by: any[]): T[] {
+  return from.filter(f => by.includes(f));
+}
 
-  public static async transformResult<T>(
-    resultOrDeferred: T | Promise<T> | Observable<T>,
-  ): Promise<T> {
-    if (this.isObservable(resultOrDeferred)) {
-      return await (<Observable<T>>resultOrDeferred).toPromise();
-    }
+export function omit<T>(from: any[], by: any[]): T[] {
+  return from.filter(f => !by.includes(f));
+}
 
-    return await resultOrDeferred;
-  }
+export function isNode() {
+  return (
+    isObj(process) && isObj(process.release) && process.release.name === 'node'
+  );
+}
+
+export async function getDeferred<T>(value: any): Promise<T> {
+  return isPromise(value) ? await value : value;
 }

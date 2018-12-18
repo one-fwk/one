@@ -1,16 +1,17 @@
 import { Scanner, OneContainer, OneModule, InjectionToken } from './module';
-import { APP_INIT, APP_DESTROY } from './tokens';
 import { ExceptionsZone, MissingInjectionTokenException } from './errors';
 import { Registry } from './registry';
-import { Type } from './interfaces';
-import { Utils } from './util';
+import { FactoryOptions, Type } from './interfaces';
 
 // @TODO: Figure out why <https://github.com/inversify/InversifyJS/blob/master/wiki/hierarchical_di.md> doesn't work
 export class OneFactory {
   public readonly container = new OneContainer();
   public readonly scanner = new Scanner(this.container);
 
-  constructor(private readonly module: Type<any>) {}
+  constructor(
+    private readonly module: Type,
+    private readonly options: FactoryOptions = {},
+  ) {}
 
   public async start() {
     await ExceptionsZone.run(async () => {
@@ -21,17 +22,25 @@ export class OneFactory {
 
   public async destroy() {
     await ExceptionsZone.run(async () => {
-      await Utils.series(this.container.getAllProviders(APP_DESTROY));
+      const modules = this.container.getCreatedModules();
+
+      for (const module of modules) {
+        await module.onAppDestroy();
+      }
     });
   }
 
   private async init() {
-    await Utils.series(this.container.getAllProviders(APP_INIT));
+    const modules = this.container.getCreatedModules();
+
+    for (const module of modules) {
+      await module.onAppInit();
+    }
   }
 
   public select(module: Type<OneModule>) {
     return {
-      get: <T>(provider: Type<any> | InjectionToken<T>) => {
+      get: <T>(provider: Type<T> | InjectionToken<T>) => {
         return this.container.getProvider<T>(provider, module, {
           strict: true,
         });
@@ -45,13 +54,13 @@ export class OneFactory {
 
         return this.container.getAllProviders<T>(token, module);
       },
-      has: (provider: Type<any> | InjectionToken<any>) => {
+      has: (provider: Type | InjectionToken<any>) => {
         return this.container.isProviderBound(provider, module);
       },
     };
   }
 
-  public has(provider: Type<any> | InjectionToken<any>) {
+  public has(provider: Type | InjectionToken<any>) {
     return this.container.isProviderBound(provider);
   }
 
@@ -63,7 +72,7 @@ export class OneFactory {
     return this.container.getAllProviders<T>(token);
   }
 
-  public get<T>(provider: Type<any> | InjectionToken<T>) {
+  public get<T>(provider: Type<T> | InjectionToken<T>) {
     return this.container.getProvider<T>(provider);
   }
 }

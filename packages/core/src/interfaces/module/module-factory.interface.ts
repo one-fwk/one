@@ -1,7 +1,8 @@
-import { DynamicModule } from './dynamic-module.interface';
+import { Type } from '../type.interface';
+import { ModuleMetadata } from './module-metadata.interface';
 
 export interface ModuleFactory {
-  target: any;
+  target: Type<any>;
   token: string;
-  dynamicMetadata?: Partial<DynamicModule>;
+  dynamicMetadata?: ModuleMetadata;
 }

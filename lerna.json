@@ -3,7 +3,7 @@
   "command": {
     "publish": {
       "npmClient": "yarn",
-      "ignoreChanges": ["packages/*/__tests__/**"]
+      "ignoreChanges": ["packages/**/test/**/*"]
     }
   },
   "packages": ["examples/*", "packages/*"],

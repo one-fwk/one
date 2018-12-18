@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OneModule getRelatedProviders should be able to resolve symbols 1`] = `
+Set {
+  Symbol(TEST),
+}
+`;
+
+exports[`OneModule getRelatedProviders should not have providers which aren't exported 1`] = `
+Set {
+  [Function],
+}
+`;

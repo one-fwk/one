@@ -1,36 +1,40 @@
-import { ModuleTokenFactory } from './module-token-factory';
+import {
+  DynamicModule,
+  Type,
+  ModuleFactory,
+  ModuleImport,
+  Omit,
+} from '../interfaces';
+import { ModuleTokenFactory } from './token-factory';
 import { Registry } from '../registry';
 import { OneModule } from './module';
-import { Utils } from '../util';
-import { DynamicModule, Type, ModuleFactory } from '../interfaces';
-
-export type ModuleCompile = Type<any> | Promise<DynamicModule> | DynamicModule;
+import { getDeferred } from '../util';
 
 export class ModuleCompiler {
   private readonly moduleTokenFactory = new ModuleTokenFactory();
 
   public async compile(
-    module: ModuleCompile,
+    module: ModuleImport,
     scope: Type<OneModule>[] = [],
   ): Promise<ModuleFactory> {
     const { target, dynamicMetadata } = await this.extractMetadata(module);
+
     const token = this.moduleTokenFactory.create(
       target,
       scope,
       dynamicMetadata,
     );
+
     return { target, dynamicMetadata, token };
   }
 
   private async extractMetadata(
-    module: ModuleCompile,
-  ): Promise<Partial<ModuleFactory>> {
-    const moduleRef = await Utils.getDeferred<Type<OneModule> | DynamicModule>(
-      module,
-    );
+    module: ModuleImport,
+  ): Promise<Omit<ModuleFactory, 'token'>> {
+    const moduleRef = await getDeferred(module);
 
     if (!Registry.isDynamicModule(moduleRef)) {
-      return { target: <Type<OneModule>>module };
+      return { target: <Type>module };
     }
 
     const { module: target, ...dynamicMetadata } = <DynamicModule>moduleRef;

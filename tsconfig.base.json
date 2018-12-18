@@ -2,7 +2,8 @@
   "compilerOptions": {
     "strict": true,
     "target": "es5",
-    "module": "commonjs",
+    "module": "es2015",
+    "esModuleInterop": true,
     "moduleResolution": "node",
     "removeComments": true,
     "declaration": true,
@@ -12,6 +13,5 @@
     "emitDecoratorMetadata": true,
     "downlevelIteration": true,
     "lib": ["dom", "esnext"]
-  },
-  "exclude": ["node_modules"]
+  }
 }
