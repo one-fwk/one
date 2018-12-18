@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "module": "commonjs",
-    "types": ["jest", "jest-extended"]
+    "types": ["node", "jest", "jest-extended"]
   },
   "include": ["**/*.spec.ts"]
 }

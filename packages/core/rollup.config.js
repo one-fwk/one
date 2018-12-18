@@ -12,6 +12,8 @@ export default {
       jsnext: true,
       main: true,
       module: true,
+      preferBuiltins: false,
+      modulesOnly: true,
     }),
     commonjs(),
   ],

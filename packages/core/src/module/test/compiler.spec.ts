@@ -3,13 +3,13 @@ import { ModuleCompiler } from '../compiler';
 import { Registry } from '../../registry';
 
 describe('ModuleCompiler', () => {
-  let compiler: ModuleCompiler;
+  let compiler: any;
 
   @Module()
   class TestModule {}
 
   @Injectable()
-  class Nest {}
+  class TestService {}
 
   beforeEach(() => {
     compiler = new ModuleCompiler();
@@ -71,23 +71,25 @@ describe('ModuleCompiler', () => {
   describe('extractMetadata', () => {
     let isDynamicModuleSpy: jest.SpyInstance;
 
-    beforeEach(() => {
+    beforeAll(() => {
       isDynamicModuleSpy = jest.spyOn(Registry, 'isDynamicModule');
     });
 
-    afterEach(() => isDynamicModuleSpy.mockRestore());
+    afterAll(() => {
+      isDynamicModuleSpy.mockClear();
+    });
 
-    it('should return with target when <Type<Injectable>> is provided', async () => {
-      const moduleFactory = await (<any>compiler).extractMetadata(Nest);
+    it('should return with target when Injectable is provided', async () => {
+      const moduleFactory = await compiler.extractMetadata(TestService);
 
       expect(isDynamicModuleSpy).toHaveReturnedWith(false);
       expect(moduleFactory).toMatchObject({
-        target: Nest,
+        target: TestService,
       });
     });
 
-    it('should return <ModuleFactory> when <Type<OneModule>> is provided', async () => {
-      const moduleFactory = await (<any>compiler).extractMetadata(TestModule);
+    it('should return ModuleFactory when Module is provided', async () => {
+      const moduleFactory = await compiler.extractMetadata(TestModule);
 
       expect(isDynamicModuleSpy).toHaveReturnedWith(false);
       expect(moduleFactory).toMatchObject({
@@ -95,12 +97,10 @@ describe('ModuleCompiler', () => {
       });
     });
 
-    it('should return <ModuleFactory> when <DynamicModule> is provided', async () => {
-      const moduleFactory = await (<any>compiler).extractMetadata({
+    it('should return ModuleFactory when DynamicModule is provided', async () => {
+      const moduleFactory = await compiler.extractMetadata({
         module: TestModule,
       });
-
-      console.log(moduleFactory);
 
       expect(isDynamicModuleSpy).toHaveReturnedWith(true);
       expect(moduleFactory).toMatchObject({

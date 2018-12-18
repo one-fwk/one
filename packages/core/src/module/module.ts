@@ -1,12 +1,5 @@
 import getDecorators from 'inversify-inject-decorators';
 
-import {
-  APP_DESTROY,
-  APP_INIT,
-  Injector,
-  MODULE_INIT,
-  MODULE_REF,
-} from '../tokens';
 import { ProviderTypes, Scopes } from '../constants';
 import { OneContainer } from './container';
 import { Reflector } from '../reflector';
@@ -32,11 +25,18 @@ import {
   Type,
   ValueProvider,
 } from '../interfaces';
+import {
+  APP_DESTROY,
+  APP_INIT,
+  Injector,
+  MODULE_INIT,
+  MODULE_REF,
+} from '../tokens';
 
 export class OneModule {
   public readonly imports = new Set<OneModule>();
   public readonly providers = new Set<Provider>();
-  public readonly injector = new Injector(/*{ skipBaseClassChecks: true }*/);
+  public readonly injector = new Injector({ skipBaseClassChecks: true });
   public readonly lazyInject = getDecorators(this.injector).lazyInject;
   public readonly exports = new Set<Token>();
   public readonly created = createDeferredPromise();
@@ -113,8 +113,8 @@ export class OneModule {
   private getRelatedProviders() {
     const providerScope = new Set<Token>();
 
-    const find = (type: OneModule | Token, scope: Type[]) => {
-      if (Registry.isProvider(type)) {
+    const find = (type: OneModule | Token | unknown, scope: Type[]) => {
+      if (Registry.isToken(type)) {
         providerScope.add(<Token>type);
       } else if (type instanceof OneModule) {
         for (const related of (<OneModule>type).exports) {
@@ -182,12 +182,12 @@ export class OneModule {
   }
 
   private async everyInjectable(
-    every: (provider: any) => Promise<void> | void,
+    every: (provider: Type<any>) => Promise<void> | void,
   ) {
     for (const provider of this.providers) {
       if (!Reflector.isInjectable(provider)) continue;
 
-      await every(provider);
+      await every(this.injector.get(<Type<any>>provider));
     }
   }
 

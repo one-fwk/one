@@ -1,10 +1,7 @@
-import 'reflect-metadata';
 import { Global, Injectable, Module, OneContainer } from '@one/core';
+import { Registry } from '../../registry';
 import { OneModule } from '../module';
-import {
-  InvalidModuleException,
-  UnknownModuleException,
-} from '../../errors/exceptions';
+import { InvalidModuleException, UnknownModuleException } from '../../errors';
 
 describe('OneContainer', () => {
   let container: any;
@@ -16,9 +13,78 @@ describe('OneContainer', () => {
   @Module()
   class TestModule {}
 
+  @Injectable()
+  class TestService {}
+
   @Global()
   @Module()
   class GlobalTestModule {}
+
+  /*describe('createdModules', () => {
+    describe('isModuleCreated', () => {
+
+    });
+
+    describe('addCreatedModule', () => {
+
+    });
+  });
+
+  describe('providerTokens', () => {
+
+  });*/
+
+  describe('getModulesFrom', () => {});
+
+  describe('isProviderBound', () => {
+    let test: OneModule;
+    let globalTest: OneModule;
+
+    beforeEach(() => {
+      test = new OneModule(TestModule, [], container);
+      globalTest = new OneModule(GlobalTestModule, [], container);
+
+      container.modules.set('test', test);
+      container.modules.set('globalTest', globalTest);
+
+      test.injector.bind(TestService).toSelf();
+    });
+
+    beforeAll(() => {
+      Registry.getToken = jest.fn(() => TestService);
+    });
+
+    afterAll(() => {
+      (<any>Registry.getToken).mockClear();
+    });
+
+    it('should check in all modules', () => {
+      container.getModulesFrom = () => [test, globalTest];
+      expect(container.isProviderBound(TestService)).toBeTrue();
+    });
+
+    it('should check in specific module only', () => {
+      container.getModulesFrom = () => [test];
+      expect(container.isProviderBound(TestService, TestModule)).toBeTrue();
+
+      container.getModulesFrom = () => [globalTest];
+      expect(
+        container.isProviderBound(TestService, GlobalTestModule),
+      ).toBeFalse();
+    });
+  });
+
+  describe('getRootModule', () => {
+    it('should get first module added', () => {
+      const first = new OneModule({} as any, [], container);
+      const second = new OneModule({} as any, [], container);
+
+      container.modules.set('first', first);
+      container.modules.set('second', second);
+
+      expect(container.getRootModule()).toBe(first);
+    });
+  });
 
   describe('addProvider', () => {
     it('should throw UnknownModuleException when module is not stored in collection', () => {
@@ -26,6 +92,23 @@ describe('OneContainer', () => {
       const error = new UnknownModuleException([token]);
 
       return expect(container.addProvider(null, token)).rejects.toThrow(error);
+    });
+  });
+
+  describe('getAllInjectables', () => {
+    it('should return injectables from all modules', () => {
+      const first = new OneModule(TestModule, [], container);
+      const second = new OneModule(GlobalTestModule, [], container);
+
+      container.modules.set('', first);
+      container.modules.set(' ', second);
+
+      first.addProvider(TestService);
+      second.addProvider({
+        provide: {} as any,
+      });
+
+      expect(container.getAllInjectables()).toMatchObject([TestService]);
     });
   });
 
@@ -42,15 +125,13 @@ describe('OneContainer', () => {
 
   describe('addModule', () => {
     it('should not add module if already exists in collection', async () => {
-      const modules = new Map<string, OneModule>();
-      const setSpy = jest.spyOn(modules, 'set');
-      container.modules = modules;
+      const modulesSetSpy = jest.spyOn(container.modules, 'set');
 
       await container.addModule(TestModule, []);
       await container.addModule(TestModule, []);
 
-      expect(setSpy).toHaveBeenCalledTimes(1);
-      expect([...modules.entries()]).toMatchSnapshot();
+      expect(modulesSetSpy).toHaveBeenCalledTimes(1);
+      expect(container.modules).toMatchSnapshot();
     });
 
     it('should throw an exception if module is undefined', async () => {
@@ -66,141 +147,37 @@ describe('OneContainer', () => {
   });
 
   describe('addDynamicMetadata', () => {
-    let collection: Map<string, any>;
-    let addSpy: jest.SpyInstance;
+    let addDynamicModulesMetadataSpy: jest.SpyInstance;
     const token = 'token';
 
     beforeEach(() => {
-      collection = new Map();
-      container.dynamicModulesMetadata = collection;
-      addSpy = jest.spyOn(collection, 'set');
+      addDynamicModulesMetadataSpy = jest.spyOn(
+        container.dynamicModulesMetadata,
+        'set',
+      );
     });
 
-    afterEach(() => addSpy.mockClear());
+    afterEach(() => {
+      addDynamicModulesMetadataSpy.mockClear();
+    });
 
     describe('when dynamic metadata exists', () => {
       it('should add to the dynamic metadata collection', () => {
         const dynamicMetadata = { module: null };
 
         container.addDynamicMetadata(token, dynamicMetadata, []);
-        expect(addSpy).toHaveBeenCalledWith(token, dynamicMetadata);
+        expect(addDynamicModulesMetadataSpy).toHaveBeenCalledWith(
+          token,
+          dynamicMetadata,
+        );
       });
     });
 
     describe('when dynamic metadata does not exists', () => {
-      it('should not add to the dynamic metadata collection', () => {
-        container.addDynamicMetadata(token, null, []);
-        expect(addSpy).not.toHaveBeenCalled();
+      it('should not add to the dynamic metadata collection', async () => {
+        await container.addDynamicMetadata(token, null, []);
+        expect(addDynamicModulesMetadataSpy).not.toHaveBeenCalled();
       });
     });
   });
 });
-
-/*describe('OneContainer', () => {
-  let container: OneContainer;
-
-  @Module()
-  class TestModule {}
-
-  @Module()
-  class TestModule2 {}
-
-  @Injectable()
-  class Nest {}
-
-  beforeEach(() => {
-    container = new OneContainer();
-  });
-
-  describe('getModules', () => {
-    let getModuleValuesSpy: jest.SpyInstance;
-    let getModuleSpy: jest.SpyInstance;
-
-    beforeEach(() => {
-      getModuleValuesSpy = jest.spyOn(container, 'getModuleValues');
-      getModuleSpy = jest.spyOn(container, 'getModule');
-    });
-
-    afterEach(() => {
-      getModuleValuesSpy.mockClear();
-      getModuleSpy.mockClear();
-    });
-
-    it('should call getModuleValues if nil', async () => {
-      await container.addModule(TestModule);
-      const modules = (<any>container).getModulesFrom();
-      const testModule = container.modules.values().next().value;
-
-      expect(getModuleSpy).not.toHaveBeenCalled();
-      expect(getModuleValuesSpy).toHaveBeenCalled();
-      expect(modules[0]).toStrictEqual(testModule);
-    });
-
-    it('should call getModule if not nil', async () => {
-      await container.addModule(TestModule);
-      const modules = (<any>container).getModulesFrom(<any>TestModule);
-      const testModule = container.modules.values().next().value;
-
-      // Calls with [] ????
-      // expect(getModuleValuesSpy).not.toHaveBeenCalled();
-      expect(getModuleSpy).toReturnWith(testModule);
-      expect(modules[0]).toStrictEqual(testModule);
-    });
-  });
-
-  describe('isProviderBound', () => {
-    it('should check if provider is bound in modules tree', async () => {
-      await container.addModule(TestModule);
-      const testModule = container.modules.values().next().value;
-
-      await (<any>testModule).bindProvider(<any>Nest);
-
-      expect(container.isProviderBound(Nest)).toBeTrue();
-    });
-
-    it('should check if provider is bound in specific module', async () => {
-      await container.addModule(TestModule);
-      await container.addModule(TestModule2);
-      const testModule = container.modules.values().next().value;
-
-      await (<any>testModule).bindProvider(<any>Nest);
-
-      expect(container.isProviderBound(Nest, TestModule2)).toBeFalse();
-      expect(container.isProviderBound(Nest, TestModule)).toBeTrue();
-    });
-  });
-
-  describe('getProvider', () => {
-    it('should get provider in nested modules tree', async () => {
-      await container.addModule(TestModule);
-      await container.addModule(TestModule2);
-      const testModule2 = container.getModuleValues()[1];
-
-      await (<any>testModule2).bindProvider(<any>Nest);
-
-      await expect(container.getProvider(Nest, null)).toBeInstanceOf(Nest);
-    });
-
-    it('should lookup provider in scope when strict is true', async () => {
-      await container.addModule(TestModule);
-      const testModule = container.modules.values().next().value;
-
-      await (<any>testModule).bindProvider(<any>Nest);
-
-      expect(
-        container.getProvider(Nest, TestModule, {
-          strict: true,
-        }),
-      ).toBeInstanceOf(Nest);
-    });
-
-    it('should throw UnknownProviderException if not found', () => {
-      const message = new UnknownProviderException(Nest, TestModule);
-
-      expect(() => {
-        container.getProvider(Nest, TestModule);
-      }).toThrow(message);
-    });
-  });
-});
-*/

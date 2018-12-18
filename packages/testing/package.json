@@ -7,7 +7,7 @@
   "typings": "lib/index.d.ts",
   "scripts": {
     "prepublish": "yarn build",
-    "build": "rollup -c"
+    "build": "rimraf && rollup -c"
   },
   "publishConfig": {
     "access": "public"

@@ -5,13 +5,7 @@ import { Metadata } from '../constants';
 import { Registry } from '../registry';
 import { OneModule } from './module';
 import { concat, omit } from '../util';
-import {
-  ModuleExport,
-  ModuleImport,
-  Provider,
-  Token,
-  Type,
-} from '../interfaces';
+import { ModuleExport, ModuleImport, Provider, Type } from '../interfaces';
 
 export class Scanner {
   constructor(private readonly container: OneContainer) {}

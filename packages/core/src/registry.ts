@@ -36,7 +36,7 @@ export class Registry {
     );
   }
 
-  public static isModule(target: any) {
+  public static isModule(target: unknown) {
     return this.isDynamicModule(target)
       ? Reflector.isModule(target.module)
       : Reflector.isModule(target);
@@ -59,21 +59,25 @@ export class Registry {
   }
 
   public static isInjectionToken(
-    provider: any,
-  ): provider is InjectionToken<any> {
-    return provider instanceof InjectionToken;
+    target: unknown,
+  ): target is InjectionToken<any> {
+    return target instanceof InjectionToken;
   }
 
-  public static isProvider(provider: any): provider is OpaqueToken<any> {
-    return this.isInjectionToken(provider) || Reflector.isInjectable(provider);
+  public static isToken(target: unknown): target is Token {
+    return isSymbol(target) || Reflector.isInjectable(target);
   }
 
-  public static assertProvider(val: any, context?: string) {
+  public static isOpaqueToken(target: unknown): target is OpaqueToken<any> {
+    return this.isInjectionToken(target) || Reflector.isInjectable(target);
+  }
+
+  public static assertProvider(val: unknown, context?: string) {
     if (isUndef(val)) {
       throw new CircularDependencyException(context!);
     }
 
-    if (!this.isProvider(val)) {
+    if (!this.isOpaqueToken(val)) {
       throw new InvalidProviderException(val);
     }
   }
@@ -140,7 +144,7 @@ export class Registry {
     const { useClass, provide } = <ClassProvider<any>>provider;
 
     if (useClass) {
-      const isProvider = this.isProvider(useClass);
+      const isProvider = this.isOpaqueToken(useClass);
 
       if (!isProvider) {
         const name = this.getProviderName(provide);
@@ -163,7 +167,7 @@ export class Registry {
     const { useExisting, provide } = <ExistingProvider<any>>provider;
 
     if (useExisting) {
-      const isProvider = this.isProvider(useExisting);
+      const isProvider = this.isOpaqueToken(useExisting);
 
       if (!isProvider) {
         const name = this.getProviderName(provide);

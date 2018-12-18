@@ -9,7 +9,7 @@ export default {
   ],
   output: [
     {
-      file: 'lib/one-testing.js',
+      file: 'lib/one-cli-tools.js',
       format: 'cjs',
     },
   ],

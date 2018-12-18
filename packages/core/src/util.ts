@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { DeferredPromise } from '../lib';
+import { DeferredPromise } from './interfaces';
 
 export const noop = () => {};
 
@@ -119,13 +119,11 @@ export function omit<T>(from: any[], by: any[]): T[] {
   return from.filter(f => !by.includes(f));
 }
 
-/*export function isNode() {
+export function isNode() {
   return (
-    !isNil(<any>process) &&
-    isObj((<any>process).release) &&
-    (<any>process).release.name === 'node'
+    isObj(process) && isObj(process.release) && process.release.name === 'node'
   );
-}*/
+}
 
 export async function getDeferred<T>(value: any): Promise<T> {
   return isPromise(value) ? await value : value;

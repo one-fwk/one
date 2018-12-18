@@ -1,0 +1,12 @@
+{
+  "name": "@one/cli-tools",
+  "version": "0.0.1",
+  "scripts": {
+    "prepublish": "yarn build",
+    "build": "rimraf lib && rollup -c"
+  },
+  "dependencies": {
+    "@one/core": "*",
+    "commander": "*"
+  }
+}

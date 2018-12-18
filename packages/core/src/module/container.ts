@@ -21,6 +21,7 @@ import {
   Token,
   Type,
 } from '../interfaces';
+import { inject } from 'inversify';
 
 export interface StrictSelect {
   strict?: boolean;
@@ -64,7 +65,7 @@ export class OneContainer {
     this.providerTokens.add(token);
   }
 
-  private getModulesFrom(module?: Type<OneModule>) {
+  private getModulesFrom(module?: Type<OneModule>): OneModule[] {
     return !isNil(module)
       ? [<OneModule>this.getModule(module)]
       : this.getModuleValues();
@@ -72,7 +73,7 @@ export class OneContainer {
 
   public isProviderBound(
     provider: Type | InjectionToken<any>,
-    module?: Type<OneModule>,
+    module?: Type<any>,
   ) {
     const token = Registry.getToken(provider);
     return this.getModulesFrom(module).some(({ injector }) =>
@@ -100,10 +101,10 @@ export class OneContainer {
   ): T {
     const token = Registry.getProviderToken(<any>provider);
 
-    if (strict) {
-      const { injector } = this.getModule(scope!)!;
+    if (scope && strict) {
+      const { injector } = this.getModule(scope)!;
 
-      if (injector.isBound(token)) {
+      if (injector && injector.isBound(token)) {
         return injector.get<T>(token);
       } else {
         throw new Error('Container.getProvider()');
@@ -117,6 +118,20 @@ export class OneContainer {
     }
 
     throw new UnknownProviderException(provider, scope!);
+  }
+
+  public getAllInjectables(): Type<any>[] {
+    const injectables: Type<any>[] = [];
+
+    for (const [, { providers }] of this.modules) {
+      for (const provider of providers) {
+        if (!Reflector.isInjectable(provider)) continue;
+
+        injectables.push(<Type<any>>provider);
+      }
+    }
+
+    return injectables;
   }
 
   public getAllProviders<T>(provider: InjectionToken<T>, target?: Type<any>) {

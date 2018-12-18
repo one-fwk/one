@@ -31,21 +31,21 @@ describe('Registry', () => {
     });
   });
 
-  describe('isProvider', () => {
+  describe('isOpaqueToken', () => {
     it('should return true with Injectable', () => {
-      expect(Registry.isProvider(TestService)).toBeTrue();
+      expect(Registry.isOpaqueToken(TestService)).toBeTrue();
     });
 
     it('should return true with InjectionToken', () => {
-      expect(Registry.isProvider(TEST));
+      expect(Registry.isOpaqueToken(TEST));
     });
 
     it('should return false with Module', () => {
-      expect(Registry.isProvider(TestModule)).toBeFalse();
+      expect(Registry.isOpaqueToken(TestModule)).toBeFalse();
     });
 
     it('should return false with anything else', () => {
-      expect(Registry.isProvider(null as any)).toBeFalse();
+      expect(Registry.isOpaqueToken(null as any)).toBeFalse();
     });
   });
 

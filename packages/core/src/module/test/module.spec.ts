@@ -12,10 +12,14 @@ import {
   FactoryProvider,
   ValueProvider,
 } from '../../interfaces';
+import { Registry } from '../../registry';
 
 describe('OneModule', () => {
   let container: OneContainer;
+  let testProvider: FactoryProvider<any>;
   let module: any;
+
+  const TEST = new InjectionToken<void>('TEST');
 
   @Module()
   class TestModule {}
@@ -26,39 +30,79 @@ describe('OneModule', () => {
   beforeEach(() => {
     container = new OneContainer();
     module = new OneModule(TestModule, [], container);
+
+    testProvider = {
+      provide: TEST,
+      useFactory: jest.fn(),
+    };
   });
 
   describe('getDependencies', () => {});
 
+  describe('events', () => {
+    beforeEach(() => {});
+
+    describe('onModuleInit', () => {
+      describe('runOnModuleInit', () => {});
+    });
+
+    describe('onModuleDestroy', () => {});
+
+    describe('onAppInit', () => {
+      describe('runOnAppInit', () => {});
+
+      describe('factoriesOnAppInit', () => {});
+
+      describe('injectablesOnAppInit', () => {});
+    });
+
+    describe('onAppDestroy', () => {});
+  });
+
   describe('bindings', () => {
-    const TEST = Symbol.for('TestService');
+    const TestSymbol = Symbol.for('TestService');
 
     describe('bindProviders', () => {
-      const TEST = new InjectionToken<void>('TEST');
+      beforeAll(() => {
+        Registry.getProviderToken = jest.fn(() => TEST.name);
+      });
 
       beforeEach(() => {
         module.linkRelatedProviders = noop;
-        module.getProviderType = noop;
-        module.bind = noop;
+        module.getProviderType = jest.fn(() => ProviderTypes.FACTORY);
+        module.bind = jest.fn();
+      });
+
+      afterAll(() => {
+        (<any>Registry.getProviderToken).mockClear();
+      });
+
+      it('bind should be called with right arguments', async () => {
+        module.addProvider(testProvider);
+
+        await expect(module.bindProviders()).resolves.not.toThrow();
+
+        expect(module.bind).toHaveBeenCalledWith(
+          TEST.name,
+          ProviderTypes.FACTORY,
+          testProvider,
+        );
       });
 
       it('should throw MultiProviderException if providers with same identifier exists without multi property set', async () => {
         const error = new MultiProviderException(TEST.name.toString());
 
-        module.addProvider({ provide: TEST });
-        module.addProvider({ provide: TEST });
+        module.addProvider(testProvider);
+        module.addProvider(testProvider);
 
         await expect(module.bindProviders()).rejects.toThrowError(error);
       });
 
       it('should bind providers with same identifier if multi property is set', async () => {
-        const provider = {
-          provide: TEST,
-          multi: true,
-        };
+        testProvider.multi = true;
 
-        module.addProvider(provider);
-        module.addProvider(provider);
+        module.addProvider(testProvider);
+        module.addProvider(testProvider);
 
         await expect(module.bindProviders()).resolves.not.toThrow();
       });
@@ -68,40 +112,42 @@ describe('OneModule', () => {
       it('should bind a string value', () => {
         const useValue = 'Hello World';
 
-        module.bindValueProvider(TEST, { useValue });
+        module.bindValueProvider(TestSymbol, { useValue });
 
-        expect(module.injector.get(TEST)).toEqual(useValue);
+        expect(module.injector.get(TestSymbol)).toEqual(useValue);
       });
 
       it('should bind any value', () => {
         const useValue = undefined;
 
-        module.bindValueProvider(TEST, { useValue });
+        module.bindValueProvider(TestSymbol, { useValue });
 
-        expect(module.injector.get(TEST)).toBeUndefined();
+        expect(module.injector.get(TestSymbol)).toBeUndefined();
       });
     });
 
     describe('bindExistingProvider', () => {
-      let provider: any;
+      let existingProvider: ExistingProvider<TestService>;
 
       beforeEach(() => {
         module.injector.bind(TestService).toSelf();
-        provider = {
+
+        existingProvider = {
+          provide: TEST,
           useExisting: TestService,
         };
       });
 
       it('should be instance of TestService when using token as identifier', () => {
-        module.bindExistingProvider(TEST, provider);
+        module.bindExistingProvider(TestSymbol, existingProvider);
 
-        expect(module.injector.get(TEST)).toBeInstanceOf(TestService);
+        expect(module.injector.get(TestSymbol)).toBeInstanceOf(TestService);
       });
 
       it('should be instance of TestService when using class as identifier', () => {
         class Test {}
 
-        module.bindExistingProvider(Test, provider);
+        module.bindExistingProvider(Test, existingProvider);
 
         expect(module.injector.get(Test)).toBeInstanceOf(TestService);
       });
@@ -110,35 +156,37 @@ describe('OneModule', () => {
     describe('bindFactoryProvider', () => {
       const identifier = Symbol.for('FactoryProvider');
       let counter: number;
-      let provider: any;
 
       beforeEach(() => {
         counter = 0;
-        provider = {
+        testProvider = {
+          provide: TEST,
           useFactory: jest.fn(() => counter++),
         };
       });
 
-      afterEach(() => provider.useFactory.mockClear());
+      afterEach(() => {
+        (<any>testProvider.useFactory).mockClear();
+      });
 
       it('should bind FactoryProvider as singleton', async () => {
-        await module.bindFactoryProvider(identifier, provider);
+        await module.bindFactoryProvider(identifier, testProvider);
 
         const firstVal = module.injector.get(identifier);
         const secondVal = module.injector.get(identifier);
 
-        expect(provider.useFactory).toHaveBeenCalledTimes(1);
+        expect(testProvider.useFactory).toHaveBeenCalledTimes(1);
         expect(firstVal).toEqual(secondVal);
       });
 
       it('should bind FactoryProvider as transient', async () => {
-        provider.scope = Scopes.TRANSIENT;
-        await module.bindFactoryProvider(identifier, provider);
+        testProvider.scope = Scopes.TRANSIENT;
+        await module.bindFactoryProvider(identifier, testProvider);
 
         const firstVal = module.injector.get(identifier);
         const secondVal = module.injector.get(identifier);
 
-        expect(provider.useFactory).toHaveBeenCalledTimes(2);
+        expect(testProvider.useFactory).toHaveBeenCalledTimes(2);
         expect(firstVal).not.toEqual(secondVal);
       });
 
@@ -234,8 +282,23 @@ describe('OneModule', () => {
       module.addImport(catModule);
 
       const providers = module.getRelatedProviders();
+
       expect(providers.size).toBe(1);
       expect(providers.values().next().value).toBe(CatService);
+      expect(providers).toMatchSnapshot();
+    });
+
+    it('should be able to resolve symbols', () => {
+      const TEST = Symbol.for('TEST');
+
+      catModule.exports.add(TEST);
+      module.addImport(catModule);
+
+      const providers = module.getRelatedProviders();
+
+      expect(providers.size).toBe(1);
+      expect(providers.values().next().value).toBe(TEST);
+      expect(providers).toMatchSnapshot();
     });
 
     it('should be able to resolve Symbol', () => {});
