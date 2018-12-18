@@ -5,6 +5,7 @@
       <w>builtins</w>
       <w>deps</w>
       <w>downlevel</w>
+      <w>esnext</w>
       <w>falsy</w>
       <w>identifer</w>
       <w>initializers</w>
@@ -14,6 +15,7 @@
       <w>metatype</w>
       <w>metatypes</w>
       <w>rxjs</w>
+      <w>treeshake</w>
       <w>tsconfig</w>
     </words>
   </dictionary>

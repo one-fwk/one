@@ -1,13 +1,13 @@
 {
   "name": "@one/testing",
-  "version": "1.3.8",
+  "version": "1.5.1",
   "description": "",
-  "main": "lib/one-testing.js",
-  "module": "lib/one-testing.mjs",
+  "main": "lib/index.js",
+  "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
   "scripts": {
     "prepublish": "yarn build",
-    "build": "rimraf && rollup -c"
+    "build": "rimraf lib && rollup -c"
   },
   "publishConfig": {
     "access": "public"
