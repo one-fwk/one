@@ -13,14 +13,14 @@ export class CommandBuilder {
     private readonly options: CommandOptions,
   ) {
     yargs.command(
-      options.name,
+      [options.name, options.alias || ''],
       options.describe!,
-      (argv: Argv) => this.builder(argv),
-      (args: Arguments) => this.handle(args),
+      (argv) => this.build(argv),
+      (args) => this.handle(args),
     );
   }
 
-  private builder(argv: Argv): Argv {
+  private build(argv: Argv): Argv {
     return argv;
   }
 

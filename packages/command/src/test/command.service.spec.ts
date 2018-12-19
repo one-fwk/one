@@ -14,9 +14,13 @@ describe('CommandService', () => {
 
   @Command({ name: 'none', describe: '' })
   class TestCommand {
-    @Positional({}) serve!: string;
+    @Positional({
+      default: 'chrome',
+    }) serve!: string;
 
-    @Option({}) port!: boolean;
+    @Option({
+      default: 8080,
+    }) port!: boolean;
   }
 
   @Injectable()
@@ -59,19 +63,37 @@ describe('CommandService', () => {
     });
   });
 
-  describe('createPositionalMetadata', () => {
-    it('should return a IterableIterator<[string, PositionalOptions]> collection', () => {
-      const metadata = commander.createPositionalMetadata(testCommand).toArray();
+  describe('reflectOptionMetadata', () => {
+    it('should return OptionOptions', () => {
+      const options = commander.reflectOptionMetadata(testCommand, 'port');
+      expect(options).toMatchObject({ default: 8080 });
+    });
+  });
 
-      expect(metadata).toMatchObject([['serve', {}]]);
+  describe('reflectPositionalMetadata', () => {
+    it('should return OptionOptions', () => {
+      const positionals = commander.reflectPositionalMetadata(testCommand, 'serve');
+      expect(positionals).toMatchObject({ default: 'chrome' });
     });
   });
 
   describe('createOptionMetadata', () => {
     it('should return an IterableIterator<[string, OptionOptions]> collection', () => {
+      commander.reflectOptionMetadata = jest.fn(() => ({ default: 8080 }));
+
       const metadata = commander.createOptionMetadata(testCommand).toArray();
 
-      expect(metadata).toMatchObject([['port'], {}]);
+      expect(metadata).toMatchObject([['port'], { default: 8080 }]);
+    });
+  });
+
+  describe('createPositionalMetadata', () => {
+    it('should return a IterableIterator<[string, PositionalOptions]> collection', () => {
+      commander.reflectPositionalMetadata = jest.fn(() => ({ default: 'chrome' }));
+
+      const metadata = commander.createPositionalMetadata(testCommand).toArray();
+
+      expect(metadata).toMatchObject([['serve', { default: 'chrome' }]]);
     });
   });
 });

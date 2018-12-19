@@ -1,4 +1,5 @@
 import { iterate } from 'iterare';
+import yargs from 'yargs';
 import {
   Inject,
   Injectable,
@@ -33,21 +34,12 @@ export class CommandService implements OnAppInit {
       .filter(injectable => Reflector.has(COMMAND_META, injectable));
   }
 
-  private getOptionMetadata(instance: Object, propertyKey: string) {
+  private reflectOptionMetadata(instance: Object, propertyKey: string) {
     return Reflector.get<OptionOptions>(OPTION_META, instance, propertyKey)!;
   }
 
-  private getPositionalMetadata(instance: Object, propertyKey: string) {
+  private reflectPositionalMetadata(instance: Object, propertyKey: string) {
     return Reflector.get<PositionalOptions>(POSITIONAL_META, instance, propertyKey)!;
-  }
-
-  private createPositionalMetadata(instance: Object) {
-    const positionals = this.explorer.scanForPositionals(instance);
-
-    return iterate(positionals).map((propertyKey): [string, PositionalOptions] => ([
-      propertyKey,
-      this.getPositionalMetadata(instance, propertyKey),
-    ]));
   }
 
   private createOptionMetadata(instance: Object) {
@@ -55,7 +47,16 @@ export class CommandService implements OnAppInit {
 
     return iterate(options).map((propertyKey): [string, OptionOptions] => ([
       propertyKey,
-      this.getOptionMetadata(instance, propertyKey),
+      this.reflectOptionMetadata(instance, propertyKey),
+    ]));
+  }
+
+  private createPositionalMetadata(instance: Object) {
+    const positionals = this.explorer.scanForPositionals(instance);
+
+    return iterate(positionals).map((propertyKey): [string, PositionalOptions] => ([
+      propertyKey,
+      this.reflectPositionalMetadata(instance, propertyKey),
     ]));
   }
 
@@ -92,5 +93,7 @@ export class CommandService implements OnAppInit {
       // builder.addPositionals(positionalMetadata);
       // builder.addOptions(optionMetadata);
     });
+
+    yargs.parse(this.options.args || process.argv);
   }
 }
