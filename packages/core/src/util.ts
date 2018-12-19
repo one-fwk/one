@@ -90,8 +90,8 @@ export function getEntryValues<T, S = string>(
   return (<Array<[S, T]>>[...entries]).map<T>(([_, value]) => value);
 }
 
-export function promisify<F extends Function>(fn: F) {
-  return <T>(...args: any[]): Promise<T> => {
+export function promisify<T, F extends Function>(fn: F) {
+  return (...args: any[]): Promise<T> => {
     if (!isFunc(fn))
       throw new Error(`Can't promisify a non function: ${JSON.stringify(fn)}`);
 

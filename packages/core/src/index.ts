@@ -2,6 +2,10 @@ export { OneContainer, InjectionToken } from './module';
 export {
   ModuleMetadata,
   Type,
+  Omit,
+  RequiredKnownKeys,
+  OptionalKnownKeys,
+  Abstract,
   TargetPropertyRef,
   TargetRef,
   DynamicModule,

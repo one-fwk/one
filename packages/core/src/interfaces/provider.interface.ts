@@ -3,12 +3,12 @@ import { Dependency, OpaqueToken } from './module';
 import { Scopes } from '../constants';
 
 export type Provider<T = any> =
-  | ProvideToken<T>
+  // | ProvideToken<T>
   | ValueProvider<T>
   | FactoryProvider<T>
   | ExistingProvider<T>
   | ClassProvider<T>
-  | Dependency<T>;
+  | Dependency;
 
 export interface ClassProvider<T> extends ProvideToken<T>, MultiProvider {
   useClass: Type<T>;
@@ -19,7 +19,7 @@ export interface ProvideToken<T> {
 }
 
 export interface DepsProvider {
-  deps: Dependency<any>[];
+  deps: Dependency[];
 }
 
 export interface MultiProvider {
