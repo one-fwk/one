@@ -8,7 +8,7 @@ describe('MetadataExplorerService', () => {
   let testCommand: TestCommand;
   let explorer: MetadataExplorerService;
 
-  @Command({ name: 'test' })
+  @Command({ name: 'test', describe: 'any' })
   class TestCommand {
     @Positional({}) test1!: string;
 

@@ -1,23 +1,27 @@
-import yargs, { Arguments, Argv, Options, PositionalOptions } from 'yargs';
+import yargs, { Arguments, Argv } from 'yargs';
 import { Reflector } from '@one/core';
 
-import { CommandOptions, OptionsMetadata, PositionalMetadata } from '../interfaces';
-import { ArgvType } from '../interfaces/options/argv-type.interface';
+import { ArgvType, CommandOptions, OptionsMetadata, PositionalMetadata } from '../interfaces';
+import { Builder } from './builder';
 
-export class CommandBuilder<T> {
+export class CommandBuilder {
   private positionalsMeta!: PositionalMetadata;
   private optionsMeta!: OptionsMetadata;
-  private builder!: Argv;
 
   constructor(
     private readonly instance: Object,
     private readonly options: CommandOptions,
   ) {
-    yargs.command(options.name, options.describe, (argv: Argv) => {
-      this.builder = argv;
+    yargs.command(
+      options.name,
+      options.describe!,
+      (argv: Argv) => this.builder(argv),
+      (args: Arguments) => this.handle(args),
+    );
+  }
 
-      return argv;
-    }, (args: Arguments) => this.handle(args));
+  private builder(argv: Argv): Argv {
+    return argv;
   }
 
   private handle(args: Arguments) {
@@ -33,8 +37,12 @@ export class CommandBuilder<T> {
     };
   }
 
+  public add(builder: Builder<any>) {
+
+  }
+
   public addOptions(options: OptionsMetadata) {
-    this.optionsMeta = options;
+    /*this.optionsMeta = options;
 
     options.forEach((options, key) => {
       const { type, name } = this.createArgvType(key, options);
@@ -43,11 +51,11 @@ export class CommandBuilder<T> {
         ...options,
         type,
       });
-    });
+    });*/
   }
 
   public addPositionals(positionals: PositionalMetadata) {
-    this.positionalsMeta = positionals;
+    /*this.positionalsMeta = positionals;
 
     positionals.forEach((positional, key) => {
       const { type, name } = this.createArgvType(key, positional);
@@ -56,6 +64,6 @@ export class CommandBuilder<T> {
         ...positional,
         type,
       });
-    });
+    });*/
   }
 }

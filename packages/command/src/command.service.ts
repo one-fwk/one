@@ -11,14 +11,12 @@ import {
 import { MetadataExplorerService } from './metadata-explorer.service';
 import { CLI_TOOLS_OPTIONS } from './cli-tools-options';
 import { COMMAND_META, OPTION_META, POSITIONAL_META } from './tokens';
-import { CommandBuilder } from './builders';
+import { OptionBuilder, CommandBuilder, PositionalBuilder } from './builders';
 import {
   CliToolsOptions,
   PositionalOptions,
   OptionOptions,
   CommandOptions,
-  PositionalMetadata,
-  OptionsMetadata,
 } from './interfaces';
 
 @Injectable()
@@ -43,22 +41,22 @@ export class CommandService implements OnAppInit {
     return Reflector.get<PositionalOptions>(POSITIONAL_META, instance, propertyKey)!;
   }
 
-  private createPositionalMetadata(instance: Object): PositionalMetadata {
+  private createPositionalMetadata(instance: Object) {
     const positionals = this.explorer.scanForPositionals(instance);
 
-    return iterate(positionals).map((propertyKey): any => ([
+    return iterate(positionals).map((propertyKey): [string, PositionalOptions] => ([
       propertyKey,
       this.getPositionalMetadata(instance, propertyKey),
-    ])).toMap();
+    ]));
   }
 
-  private createOptionMetadata(instance: Object): OptionsMetadata {
+  private createOptionMetadata(instance: Object) {
     const options = this.explorer.scanForOptions(instance);
 
-    return iterate(options).map((propertyKey): any => ([
+    return iterate(options).map((propertyKey): [string, OptionOptions] => ([
       propertyKey,
       this.getOptionMetadata(instance, propertyKey),
-    ])).toMap();
+    ]));
   }
 
   async onAppInit() {
@@ -73,8 +71,26 @@ export class CommandService implements OnAppInit {
       const positionalMetadata = this.createPositionalMetadata(instance);
       const optionMetadata = this.createOptionMetadata(instance);
 
-      builder.addPositionals(positionalMetadata);
-      builder.addOptions(optionMetadata);
+      const positionalBuilders = positionalMetadata.map(([key, metadata]) => {
+        return new PositionalBuilder(
+          instance,
+          key,
+          metadata,
+          builder,
+        );
+      });
+
+      const optionBuilders = optionMetadata.map(([key, metadata]) => {
+        return new OptionBuilder(
+          instance,
+          key,
+          metadata,
+          builder,
+        );
+      });
+
+      // builder.addPositionals(positionalMetadata);
+      // builder.addOptions(optionMetadata);
     });
   }
 }

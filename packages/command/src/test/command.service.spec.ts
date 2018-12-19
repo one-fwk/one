@@ -60,20 +60,18 @@ describe('CommandService', () => {
   });
 
   describe('createPositionalMetadata', () => {
-    it('should return a Map<string, PositionalOptions> collection', () => {
-      const positionals = new Map<string, PositionalOptions>([['serve', {}]]);
-      const metadata = commander.createPositionalMetadata(testCommand);
+    it('should return a IterableIterator<[string, PositionalOptions]> collection', () => {
+      const metadata = commander.createPositionalMetadata(testCommand).toArray();
 
-      expect(metadata).toMatchObject(positionals);
+      expect(metadata).toMatchObject([['serve', {}]]);
     });
   });
 
   describe('createOptionMetadata', () => {
-    it('should return a Map<string, OptionOptions> collection', () => {
-      const options = new Map<string, OptionOptions>([['port', {}]]);
-      const metadata = commander.createOptionMetadata(testCommand);
+    it('should return an IterableIterator<[string, OptionOptions]> collection', () => {
+      const metadata = commander.createOptionMetadata(testCommand).toArray();
 
-      expect(metadata).toMatchObject(options);
+      expect(metadata).toMatchObject([['port'], {}]);
     });
   });
 });

@@ -1,5 +1,5 @@
 export interface CommandOptions {
   name: string;
-  describe: string;
+  describe?: string;
   alias?: string;
 }
