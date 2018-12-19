@@ -20,6 +20,7 @@ export {
   Dependency,
   Provider,
   Token,
+  Instance,
 } from './interfaces';
 
 export * from './decorators';

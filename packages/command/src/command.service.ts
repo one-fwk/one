@@ -11,13 +11,15 @@ import {
 import { MetadataExplorerService } from './metadata-explorer.service';
 import { CLI_TOOLS_OPTIONS } from './cli-tools-options';
 import { COMMAND_META, OPTION_META, POSITIONAL_META } from './tokens';
+import { CommandBuilder } from './builders';
 import {
   CliToolsOptions,
   PositionalOptions,
   OptionOptions,
-  CommandOptions, PositionalMetadata, OptionsMetadata,
+  CommandOptions,
+  PositionalMetadata,
+  OptionsMetadata,
 } from './interfaces';
-import { CommandBuilder } from './builders';
 
 @Injectable()
 export class CommandService implements OnAppInit {

@@ -11,3 +11,4 @@ export * from './factory-options.interface';
 export * from './events.interface';
 export * from './util.interface';
 export * from './abstract.interface';
+export * from './injectable.interface';

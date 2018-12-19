@@ -5,7 +5,15 @@ import { Metadata } from '../constants';
 import { Registry } from '../registry';
 import { OneModule } from './module';
 import { concat, omit } from '../util';
-import { FactoryOptions, ModuleExport, ModuleImport, Provider, Type } from '../interfaces';
+import {
+  DynamicModule,
+  FactoryOptions,
+  ModuleExport,
+  ModuleImport,
+  ModuleMetadata,
+  Provider,
+  Type,
+} from '../interfaces';
 
 export class Scanner {
   constructor(
@@ -58,13 +66,14 @@ export class Scanner {
 
   /**
    * Scan recursively for imports in a module
+   * @TODO: If object isn't decorated with @Module() simply ignore it
    *
    * @param module
    * @param scope
    * @param ctxRegistry
    */
   private async scanForModules(
-    module: Type,
+    module: ModuleImport,
     scope: Type[] = [],
     ctxRegistry = new Set<ModuleImport>(),
   ) {
@@ -75,11 +84,11 @@ export class Scanner {
 
       await this.container.addModule(module, scope);
 
-      const modules = !Registry.isDynamicModule(module)
+      const modules: ModuleImport[] = !Registry.isDynamicModule(module)
         ? Reflector.getModuleImports(module)
         : [
-            ...Reflector.getModuleImports(module.module),
-            ...(module.imports || []),
+            ...Reflector.getModuleImports((<DynamicModule>module).module),
+            ...((<ModuleMetadata>module).imports || []),
           ];
 
       for (const innerModule of modules) {
