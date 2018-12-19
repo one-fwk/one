@@ -9,6 +9,10 @@ export interface Overload extends OverrideBy {
 export class TestingModule extends OneFactory {
   private readonly overloadsMap = new Map<Dependency, Overload>();
 
+  constructor(module: Type) {
+    super(module, { testing: true });
+  }
+
   private createOverrideByBuilder(
     add: (provider: any) => TestingModule,
   ): OverrideBy {

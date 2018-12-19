@@ -249,8 +249,6 @@ export class OneModule {
     await this.bindProviders();
 
     this.injector.bind(this.target).toSelf();
-    await this.onModuleInit();
-
     this.created.resolve();
   }
 
