@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@one/testing';
-import { CliToolsModule } from '../cli-tools.module';
+import { CommandModule } from '../command.module';
 
-describe('CliToolsModule', () => {
+describe('CommandModule', () => {
   describe('register', () => {
     let module: TestingModule;
 
     beforeEach(async () => {
       module = await Test.createTestingModule({
-        imports: [CliToolsModule.register({})],
+        imports: [CommandModule.register({})],
       }).compile();
     });
 

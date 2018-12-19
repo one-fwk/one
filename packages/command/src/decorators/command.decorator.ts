@@ -1,11 +1,11 @@
 import { Injectable, Reflector } from '@one/core';
 
 import { CommandOptions } from '../interfaces';
-import { COMMAND } from '../tokens';
+import { COMMAND_META } from '../tokens';
 
 export function Command(options: CommandOptions): ClassDecorator {
-  return target => {
+  return (target) => {
+    Reflector.set(COMMAND_META, options, target);
     Injectable()(target);
-    Reflector.set(COMMAND, options, target);
   };
 }

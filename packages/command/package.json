@@ -1,12 +1,15 @@
 {
-  "name": "@one/cli-tools",
+  "name": "@one/command",
   "version": "0.0.1",
+  "main": "lib/index.js",
+  "module": "lib/index.mjs",
   "scripts": {
     "prepublish": "yarn build",
     "build": "rimraf lib && rollup -c"
   },
   "dependencies": {
     "@one/core": "*",
-    "commander": "*"
+    "yargs": "^12.0.5",
+    "iterare": "*"
   }
 }

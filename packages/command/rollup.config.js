@@ -9,8 +9,12 @@ export default {
   ],
   output: [
     {
-      file: 'lib/one-cli-tools.js',
+      file: 'lib/index.js',
       format: 'cjs',
+    },
+    {
+      file: 'lib/index.mjs',
+      format: 'esm'
     },
   ],
 };
