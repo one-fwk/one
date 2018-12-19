@@ -1,4 +1,6 @@
 import { Observable } from 'rxjs';
+import { toArray } from 'rxjs/operators';
+
 import { DeferredPromise } from './interfaces';
 
 export const noop = () => {};
@@ -127,4 +129,8 @@ export function isNode() {
 
 export async function getDeferred<T>(value: any): Promise<T> {
   return isPromise(value) ? await value : value;
+}
+
+export function toArrayPromise<T>(source$: Observable<T>): Promise<T[]> {
+  return source$.pipe(toArray()).toPromise();
 }

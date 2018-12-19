@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@one/testing';
+import { Injectable, toArrayPromise } from '@one/core';
+import { of } from 'rxjs';
 
 import { Command, Option, Positional } from '../decorators';
 import { CLI_TOOLS_OPTIONS } from '../cli-tools-options';
 import { CommandService } from '../command.service';
-import { Injectable } from '@one/core';
-import { OptionOptions, PositionalOptions } from '../interfaces';
 import { MetadataExplorerService } from '../metadata-explorer.service';
 
 describe('CommandService', () => {
@@ -28,8 +28,12 @@ describe('CommandService', () => {
 
   beforeAll(() => {
     jest.mock('../metadata-explorer.service.ts', () => ({
-      scanForPositionals: () => (['serve']),
-      scanForOptions: () => (['port']),
+      scanForPositionals() {
+        return of('serve');
+      },
+      scanForOptions() {
+        return of('port');
+      },
     }));
   });
 
@@ -78,20 +82,24 @@ describe('CommandService', () => {
   });
 
   describe('createOptionMetadata', () => {
-    it('should return an IterableIterator<[string, OptionOptions]> collection', () => {
+    it('should return an Observable<[string, OptionOptions]>', async () => {
       commander.reflectOptionMetadata = jest.fn(() => ({ default: 8080 }));
 
-      const metadata = commander.createOptionMetadata(testCommand).toArray();
+      const metadata = await toArrayPromise(
+        commander.createOptionMetadata(testCommand),
+      );
 
-      expect(metadata).toMatchObject([['port'], { default: 8080 }]);
+      expect(metadata).toMatchObject([['port', { default: 8080 }]]);
     });
   });
 
   describe('createPositionalMetadata', () => {
-    it('should return a IterableIterator<[string, PositionalOptions]> collection', () => {
+    it('should return an Observable<[string, PositionalOptions]>', async () => {
       commander.reflectPositionalMetadata = jest.fn(() => ({ default: 'chrome' }));
 
-      const metadata = commander.createPositionalMetadata(testCommand).toArray();
+      const metadata = await toArrayPromise(
+        commander.createPositionalMetadata(testCommand),
+      );
 
       expect(metadata).toMatchObject([['serve', { default: 'chrome' }]]);
     });

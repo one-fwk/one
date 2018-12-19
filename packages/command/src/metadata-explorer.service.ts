@@ -1,25 +1,29 @@
 import { Injectable, isFunc, Reflector } from '@one/core';
+import { Observable } from 'rxjs';
+
 import { POSITIONAL_META, OPTION_META } from './tokens';
 
 @Injectable()
 export class MetadataExplorerService {
-  public *scanForPositionals(instance: Object): IterableIterator<string> {
-    for (const propertyKey in instance) {
-      if (isFunc((instance as any)[propertyKey])) continue;
+  private scanForPropertyMeta(instance: Object, metadataKey: symbol) {
+    return new Observable<string>(observer => {
+      for (const propertyKey in instance) {
+        if (isFunc((instance as any)[propertyKey])) continue;
 
-      if (Reflector.has(POSITIONAL_META, instance, propertyKey)) {
-        yield propertyKey;
+        if (Reflector.has(metadataKey, instance, propertyKey)) {
+          observer.next(propertyKey);
+        }
       }
-    }
+
+      observer.complete();
+    });
   }
 
-  public *scanForOptions(instance: Object): IterableIterator<string> {
-    for (const propertyKey in instance) {
-      if (isFunc((instance as any)[propertyKey])) continue;
+  public scanForPositionals(instance: Object): Observable<string> {
+    return this.scanForPropertyMeta(instance, POSITIONAL_META);
+  }
 
-      if (Reflector.has(OPTION_META, instance, propertyKey)) {
-        yield propertyKey;
-      }
-    }
+  public scanForOptions(instance: Object): Observable<string> {
+    return this.scanForPropertyMeta(instance, OPTION_META);
   }
 }

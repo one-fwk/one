@@ -1,4 +1,5 @@
-import { iterate } from 'iterare';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import yargs from 'yargs';
 import {
   Inject,
@@ -42,22 +43,26 @@ export class CommandService implements OnAppInit {
     return Reflector.get<PositionalOptions>(POSITIONAL_META, instance, propertyKey)!;
   }
 
-  private createOptionMetadata(instance: Object) {
+  private createOptionMetadata(instance: Object): Observable<[string, OptionOptions]> {
     const options = this.explorer.scanForOptions(instance);
 
-    return iterate(options).map((propertyKey): [string, OptionOptions] => ([
-      propertyKey,
-      this.reflectOptionMetadata(instance, propertyKey),
-    ]));
+    return options.pipe(
+      map((propertyKey): [string, OptionOptions] => ([
+        propertyKey,
+        this.reflectOptionMetadata(instance, propertyKey),
+      ])),
+    );
   }
 
-  private createPositionalMetadata(instance: Object) {
+  private createPositionalMetadata(instance: Object): Observable<[string, PositionalOptions]> {
     const positionals = this.explorer.scanForPositionals(instance);
 
-    return iterate(positionals).map((propertyKey): [string, PositionalOptions] => ([
-      propertyKey,
-      this.reflectPositionalMetadata(instance, propertyKey),
-    ]));
+    return positionals.pipe(
+      map((propertyKey): [string, PositionalOptions] => ([
+        propertyKey,
+        this.reflectPositionalMetadata(instance, propertyKey),
+      ])),
+    );
   }
 
   async onAppInit() {
@@ -72,23 +77,27 @@ export class CommandService implements OnAppInit {
       const positionalMetadata = this.createPositionalMetadata(instance);
       const optionMetadata = this.createOptionMetadata(instance);
 
-      const positionalBuilders = positionalMetadata.map(([key, metadata]) => {
-        return new PositionalBuilder(
-          instance,
-          key,
-          metadata,
-          builder,
-        );
-      });
+      const positionalBuilders = positionalMetadata.pipe(
+        map(([key, metadata]) => {
+          return new PositionalBuilder(
+            instance,
+            key,
+            metadata,
+            builder,
+          );
+        }),
+      );
 
-      const optionBuilders = optionMetadata.map(([key, metadata]) => {
-        return new OptionBuilder(
-          instance,
-          key,
-          metadata,
-          builder,
-        );
-      });
+      const optionBuilders = optionMetadata.pipe(
+        map(([key, metadata]) => {
+          return new OptionBuilder(
+            instance,
+            key,
+            metadata,
+            builder,
+          );
+        }),
+      );
 
       // builder.addPositionals(positionalMetadata);
       // builder.addOptions(optionMetadata);
