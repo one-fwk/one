@@ -17,5 +17,6 @@ steps:
 
 - script: |
     yarn
-    yarn build
-  displayName: 'yarn and yarn run build'
+    lerna bootstrap
+    yarn test
+  displayName: 'bootstrap and run tests'
