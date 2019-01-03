@@ -1,5 +1,4 @@
 import axios, { AxiosRequestConfig } from 'axios';
-// @ts-ignore
 import { Module, ModuleWithProviders } from '@one/core';
 
 import { AXIOS_INSTANCE_TOKEN } from './tokens';

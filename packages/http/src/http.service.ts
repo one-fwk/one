@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-// @ts-ignore
 import { Injectable, Inject } from '@one/core';
 import { defer, Observable } from 'rxjs';
 
@@ -7,8 +6,7 @@ import { AXIOS_INSTANCE_TOKEN } from './tokens';
 
 @Injectable()
 export class HttpService {
-  @Inject(AXIOS_INSTANCE_TOKEN)
-  private readonly instance: AxiosInstance = axios;
+  @Inject(AXIOS_INSTANCE_TOKEN) instance: AxiosInstance = axios;
 
   request<T>(config: AxiosRequestConfig): Observable<AxiosResponse<T>> {
     return defer(() => this.instance.request<T>(config));

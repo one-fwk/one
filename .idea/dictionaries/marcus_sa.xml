@@ -19,6 +19,7 @@
       <w>treeshake</w>
       <w>tsconfig</w>
       <w>yargs</w>
+      <w>zerollup</w>
     </words>
   </dictionary>
 </component>
