@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es6",
     "module": "es2015",
     "strict": true,
     "esModuleInterop": true,
@@ -12,6 +12,14 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "downlevelIteration": true,
-    "lib": ["dom", "esnext"]
-  }
+    "lib": ["dom", "esnext"],
+    "plugins": [
+      { "transform": "@zerollup/ts-transform-paths" }
+    ]
+  },
+  "exclude": [
+    "lib",
+    "node_modules",
+    "**/*.spec.ts"
+  ]
 }

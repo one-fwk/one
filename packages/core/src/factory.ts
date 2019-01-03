@@ -5,8 +5,8 @@ import { FactoryOptions, Type } from './interfaces';
 
 // @TODO: Figure out why <https://github.com/inversify/InversifyJS/blob/master/wiki/hierarchical_di.md> doesn't work
 export class OneFactory {
-  public readonly container = new OneContainer();
-  public readonly scanner = new Scanner(this.container);
+  protected readonly container = new OneContainer();
+  protected readonly scanner = new Scanner(this.container, this.options);
 
   constructor(
     private readonly module: Type,
@@ -16,7 +16,10 @@ export class OneFactory {
   public async start() {
     await ExceptionsZone.run(async () => {
       await this.scanner.scan(this.module);
-      await this.init();
+
+      if (!this.options.testing) {
+        await this.init();
+      }
     });
   }
 

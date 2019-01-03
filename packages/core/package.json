@@ -1,19 +1,13 @@
 {
   "name": "@one/core",
   "version": "1.5.1",
-  "description": "",
   "main": "lib/index.js",
-  "typings": "lib/index.d.ts",
   "module": "lib/index.mjs",
-  "scripts": {
-    "prepublish": "yarn build",
-    "build": "rimraf lib && rollup -c"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "keywords": [],
+  "typings": "lib/index.d.ts",
   "author": "Marcus S. Abildskov",
+  "scripts": {
+    "build": "rollup -c node:@zerollup/rollup-preset-ts"
+  },
   "license": "MIT",
   "dependencies": {
     "fast-safe-stringify": "^2.0.6",
@@ -27,6 +21,5 @@
   },
   "files": [
     "lib"
-  ],
-  "gitHead": "9c1512e1a8a4d3becb74caa42908c56163002982"
+  ]
 }

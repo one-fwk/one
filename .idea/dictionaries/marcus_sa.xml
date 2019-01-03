@@ -14,9 +14,12 @@
       <w>jsnext</w>
       <w>metatype</w>
       <w>metatypes</w>
+      <w>positionals</w>
       <w>rxjs</w>
       <w>treeshake</w>
       <w>tsconfig</w>
+      <w>yargs</w>
+      <w>zerollup</w>
     </words>
   </dictionary>
 </component>

@@ -4,14 +4,14 @@ import { ForwardRef } from '../forward-ref.interface';
 import { Provider } from '../provider.interface';
 import { Type } from '../type.interface';
 
-export type ModuleExport<T = any> = Dependency<T> | DynamicModule;
-export type OpaqueToken<T = any> = Type<T> | InjectionToken<T>;
-export type Dependency<T = any> = OpaqueToken<T> | ForwardRef;
+export type ModuleExport = Dependency | DynamicModule<any>;
+export type OpaqueToken<T> = Type<T> | InjectionToken<T>;
+export type Dependency = OpaqueToken<any> | ForwardRef;
 export type ModuleImport =
   | Provider
-  | Promise<DynamicModule>
-  | DynamicModule
-  | Dependency<any>;
+  | Promise<DynamicModule<any>>
+  | DynamicModule<any>
+  | Dependency;
 
 export interface ModuleMetadata {
   imports?: ModuleImport[];

@@ -2,6 +2,10 @@ export { OneContainer, InjectionToken } from './module';
 export {
   ModuleMetadata,
   Type,
+  Omit,
+  RequiredKnownKeys,
+  OptionalKnownKeys,
+  Abstract,
   TargetPropertyRef,
   TargetRef,
   DynamicModule,
@@ -16,6 +20,7 @@ export {
   Dependency,
   Provider,
   Token,
+  Instance,
 } from './interfaces';
 
 export * from './decorators';

@@ -4,7 +4,7 @@ import { Reflector } from '../reflector';
 import { Registry } from '../registry';
 import { OneModule } from './module';
 import { Metadata } from '../constants';
-import { isNil, flatten, concat, getEntryValues } from '../util';
+import { isNil, flatten, concat, getEntryValues, isUndef } from '../util';
 import { Injectable } from '../decorators';
 import {
   UnknownModuleException,
@@ -264,8 +264,10 @@ export class OneContainer {
     module.addImport(related);
   }
 
-  public getDynamicMetadataByToken(token: string, key: Metadata) {
+  public getDynamicMetadataByToken(token: string, key: Metadata): any[] {
     const metadata = this.dynamicModulesMetadata.get(token);
-    return metadata && metadata[key] ? metadata[key] : [];
+    return metadata && metadata[key]
+      ? metadata[key] as any[]
+      : [];
   }
 }

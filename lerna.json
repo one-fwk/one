@@ -3,10 +3,11 @@
   "command": {
     "publish": {
       "npmClient": "yarn",
-      "ignoreChanges": ["packages/**/test/**/*"]
+      "message": "chore(release): %s [ci skip]",
+      "ignoreChanges": ["**/*spec.ts"]
     }
   },
-  "packages": ["examples/*", "packages/*"],
+  "packages": ["packages/*"],
   "npmClient": "yarn",
   "useWorkspaces": true,
   "version": "1.1.1"

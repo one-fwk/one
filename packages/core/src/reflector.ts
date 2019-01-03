@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 
-import { Type } from './interfaces';
+import { Dependency, ModuleImport, Type } from './interfaces';
 import { OneModule } from './module';
 import {
   SCOPE_METADATA,
@@ -25,8 +25,12 @@ export class Reflector {
     return target;
   }
 
-  public static get(metadataKey: string | symbol, target: any) {
-    return target instanceof Object && Reflect.getMetadata(metadataKey, target);
+  public static getDesignType(target: object, propertyKey?: string | symbol) {
+    return this.get('design:type', target, propertyKey);
+  }
+
+  public static get<T = any>(metadataKey: string | symbol, target: any, propertyKey?: string | symbol): T | null {
+    return (target instanceof Object && Reflect.getMetadata(metadataKey, target, propertyKey!)) || null;
   }
 
   public static set(
@@ -38,8 +42,8 @@ export class Reflector {
     Reflect.defineMetadata(metadataKey, metadataValue, target, propertyKey!);
   }
 
-  public static has(metadataKey: string | symbol, target: any) {
-    return target instanceof Object && Reflect.hasMetadata(metadataKey, target);
+  public static has(metadataKey: string | symbol, target: any, propertyKey?: string | symbol) {
+    return target instanceof Object && Reflect.hasMetadata(metadataKey, target, propertyKey!);
   }
 
   public static isGlobalModule(target: any) {
@@ -54,12 +58,12 @@ export class Reflector {
     return this.has(IS_INJECTABLE_METADATA, target);
   }
 
-  public static getModuleScope(target: Type<OneModule>) {
+  public static getModuleScope(target: Type) {
     const scope = this.get(SHARED_MODULE_METADATA, target);
     return scope ? scope : 'global';
   }
 
-  public static getModuleImports(target: Type) {
+  public static getModuleImports(target: Type): ModuleImport[] {
     return this.get(Metadata.IMPORTS, target) || [];
   }
 

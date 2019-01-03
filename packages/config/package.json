@@ -1,15 +1,10 @@
 {
+  "private": true,
   "name": "@one/config",
   "version": "1.1.1",
-  "description": "",
   "main": "lib/index.js",
+  "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
-  "scripts": {
-    "build": "tsc -p tsconfig.build.json"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
   "keywords": [],
   "author": "Marcus S. Abildskov",
   "license": "MIT",
@@ -20,10 +15,5 @@
     "lodash.get": "^4.4.2",
     "lodash.set": "^4.3.2",
     "yaml": "^1.0.0-rc.8"
-  },
-  "devDependencies": {
-    "@types/fs-extra": "^5.0.4",
-    "@types/glob": "^5.0.35"
-  },
-  "gitHead": "9c1512e1a8a4d3becb74caa42908c56163002982"
+  }
 }

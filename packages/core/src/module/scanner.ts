@@ -5,12 +5,23 @@ import { Metadata } from '../constants';
 import { Registry } from '../registry';
 import { OneModule } from './module';
 import { concat, omit } from '../util';
-import { ModuleExport, ModuleImport, Provider, Type } from '../interfaces';
+import {
+  DynamicModule,
+  FactoryOptions,
+  ModuleExport,
+  ModuleImport,
+  ModuleMetadata,
+  Provider,
+  Type,
+} from '../interfaces';
 
 export class Scanner {
-  constructor(private readonly container: OneContainer) {}
+  constructor(
+    private readonly container: OneContainer,
+    private readonly options: FactoryOptions = {},
+  ) {}
 
-  public async scan(module: Type<OneModule>) {
+  public async scan(module: Type) {
     await this.scanForModules(module);
     await this.scanModulesForDependencies();
     this.container.bindGlobalScope();
@@ -38,6 +49,10 @@ export class Scanner {
         await module.create();
         this.container.addCreatedModule(module);
 
+        if (!this.options.testing) {
+          await module.onModuleInit();
+        }
+
         // Create all circular referenced modules afterwards
         /*for (const innerModule of circularRefs) {
           await createModule(innerModule);
@@ -51,14 +66,15 @@ export class Scanner {
 
   /**
    * Scan recursively for imports in a module
+   * @TODO: If object isn't decorated with @Module() simply ignore it
    *
    * @param module
    * @param scope
    * @param ctxRegistry
    */
   private async scanForModules(
-    module: Type<OneModule>,
-    scope: Type<OneModule>[] = [],
+    module: ModuleImport,
+    scope: Type[] = [],
     ctxRegistry = new Set<ModuleImport>(),
   ) {
     module = Registry.getForwardRef(module);
@@ -68,11 +84,11 @@ export class Scanner {
 
       await this.container.addModule(module, scope);
 
-      const modules = !Registry.isDynamicModule(module)
+      const modules: ModuleImport[] = !Registry.isDynamicModule(module)
         ? Reflector.getModuleImports(module)
         : [
-            ...Reflector.getModuleImports(module.module),
-            ...(module.imports || []),
+            ...Reflector.getModuleImports((<DynamicModule>module).module),
+            ...((<ModuleMetadata>module).imports || []),
           ];
 
       for (const innerModule of modules) {
@@ -106,7 +122,7 @@ export class Scanner {
     }
   }
 
-  private async reflectProviders(module: Type<OneModule>, token: string) {
+  private async reflectProviders(module: Type, token: string) {
     const providers = this.getDynamicMetadata<Provider>(
       module,
       token,
@@ -119,7 +135,7 @@ export class Scanner {
   }
 
   private getDynamicMetadata<T>(
-    module: Type<OneModule>,
+    module: Type,
     token: string,
     metadataKey: Metadata,
   ): T[] {
@@ -129,7 +145,7 @@ export class Scanner {
     ];
   }
 
-  private reflectExports(module: Type<OneModule>, token: string) {
+  private reflectExports(module: Type, token: string) {
     const exported = this.getDynamicMetadata<ModuleExport>(
       module,
       token,
@@ -142,7 +158,7 @@ export class Scanner {
   }
 
   private async reflectImports(
-    module: Type<OneModule>,
+    module: Type,
     token: string,
     context: string,
   ) {

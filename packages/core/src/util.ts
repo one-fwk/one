@@ -1,4 +1,6 @@
 import { Observable } from 'rxjs';
+import { toArray } from 'rxjs/operators';
+
 import { DeferredPromise } from './interfaces';
 
 export const noop = () => {};
@@ -90,8 +92,8 @@ export function getEntryValues<T, S = string>(
   return (<Array<[S, T]>>[...entries]).map<T>(([_, value]) => value);
 }
 
-export function promisify<F extends Function>(fn: F) {
-  return <T>(...args: any[]): Promise<T> => {
+export function promisify<T, F extends Function>(fn: F) {
+  return (...args: any[]): Promise<T> => {
     if (!isFunc(fn))
       throw new Error(`Can't promisify a non function: ${JSON.stringify(fn)}`);
 
@@ -127,4 +129,8 @@ export function isNode() {
 
 export async function getDeferred<T>(value: any): Promise<T> {
   return isPromise(value) ? await value : value;
+}
+
+export function toArrayPromise<T>(source$: Observable<T>): Promise<T[]> {
+  return source$.pipe(toArray()).toPromise();
 }
