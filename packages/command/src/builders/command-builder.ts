@@ -1,69 +1,61 @@
 import yargs, { Arguments, Argv } from 'yargs';
 import { Reflector } from '@one/core';
 
-import { ArgvType, CommandOptions, OptionsMetadata, PositionalMetadata } from '../interfaces';
+import { ArgvType, CommandOptions, RunCommand } from '../interfaces';
 import { Builder } from './builder';
 
 export class CommandBuilder {
-  private positionalsMeta!: PositionalMetadata;
-  private optionsMeta!: OptionsMetadata;
+  private builders!: Builder<Required<ArgvType>>[];
 
   constructor(
-    private readonly instance: Object,
+    private readonly instance: RunCommand,
     private readonly options: CommandOptions,
   ) {
     yargs.command(
       [options.name, options.alias || ''],
-      options.describe!,
+      options.describe || '',
       (argv) => this.build(argv),
       (args) => this.handle(args),
     );
   }
 
   private build(argv: Argv): Argv {
+    this.builders.forEach(({ type, metadata }) => {
+      (argv[type] as any)(metadata.name, metadata);
+    });
+
     return argv;
   }
 
-  private handle(args: Arguments) {
-    const metadata: any[] = [...this.positionalsMeta.values(), ...this.optionsMeta.values()];
+  private async handle(args: Arguments) {
+    this.builders.forEach(({ propertyKey, metadata }) => {
+      Object.defineProperty(this.instance, propertyKey, {
+        value: args[metadata.name],
+        writable: false,
+      });
+    });
+
+    await this.instance.run(args);
   }
 
-  private createArgvType(propertyKey: string, options: (ArgvType & any)) {
+  private createMetadata(propertyKey: string, metadata: (ArgvType & any)): ArgvType {
     const designType = Reflector.getDesignType(this.instance, propertyKey);
 
     return {
-      type: options.type || (<any>designType).name.toLowerCase(),
-      name: options.name || propertyKey,
+      type: metadata.type || (designType as any).name.toLowerCase(),
+      name: metadata.name || propertyKey,
+      ...metadata,
     };
   }
 
-  public add(builder: Builder<any>) {
+  public add(builders: Builder<ArgvType>[]) {
+    this.builders = builders.map(builder => {
+      builder.metadata = this.createMetadata(
+        builder.propertyKey,
+        builder.metadata,
+      );
 
-  }
-
-  public addOptions(options: OptionsMetadata) {
-    /*this.optionsMeta = options;
-
-    options.forEach((options, key) => {
-      const { type, name } = this.createArgvType(key, options);
-
-      this.builder.option(name, <Options>{
-        ...options,
-        type,
-      });
-    });*/
-  }
-
-  public addPositionals(positionals: PositionalMetadata) {
-    /*this.positionalsMeta = positionals;
-
-    positionals.forEach((positional, key) => {
-      const { type, name } = this.createArgvType(key, positional);
-
-      this.builder.positional(name, <PositionalOptions>{
-        ...positional,
-        type,
-      });
-    });*/
+      return builder as Builder<Required<ArgvType>>;
+    });
   }
 }

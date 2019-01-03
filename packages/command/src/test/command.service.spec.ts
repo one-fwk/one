@@ -69,14 +69,14 @@ describe('CommandService', () => {
 
   describe('reflectOptionMetadata', () => {
     it('should return OptionOptions', () => {
-      const options = commander.reflectOptionMetadata(testCommand, 'port');
+      const options = commander.reflectOptionMetadata(TestCommand.prototype, 'port');
       expect(options).toMatchObject({ default: 8080 });
     });
   });
 
   describe('reflectPositionalMetadata', () => {
     it('should return OptionOptions', () => {
-      const positionals = commander.reflectPositionalMetadata(testCommand, 'serve');
+      const positionals = commander.reflectPositionalMetadata(TestCommand.prototype, 'serve');
       expect(positionals).toMatchObject({ default: 'chrome' });
     });
   });
@@ -85,11 +85,12 @@ describe('CommandService', () => {
     it('should return an Observable<[string, OptionOptions]>', async () => {
       commander.reflectOptionMetadata = jest.fn(() => ({ default: 8080 }));
 
-      const metadata = await toArrayPromise(
-        commander.createOptionMetadata(testCommand),
-      );
+      const metadata = commander.createOptionMetadata(TestCommand.prototype);
 
-      expect(metadata).toMatchObject([['port', { default: 8080 }]]);
+      expect(metadata).toMatchObject([{
+        metadata: { default: 8080 },
+        propertyKey: 'port',
+      }]);
     });
   });
 
@@ -97,11 +98,12 @@ describe('CommandService', () => {
     it('should return an Observable<[string, PositionalOptions]>', async () => {
       commander.reflectPositionalMetadata = jest.fn(() => ({ default: 'chrome' }));
 
-      const metadata = await toArrayPromise(
-        commander.createPositionalMetadata(testCommand),
-      );
+      const metadata = commander.createPositionalMetadata(TestCommand.prototype);
 
-      expect(metadata).toMatchObject([['serve', { default: 'chrome' }]]);
+      expect(metadata).toMatchObject([{
+        metadata: { default: 'chrome' },
+        propertyKey: 'serve',
+      }]);
     });
   });
 });

@@ -25,7 +25,7 @@ export class Reflector {
     return target;
   }
 
-  public static getDesignType(target: any, propertyKey?: string | symbol) {
+  public static getDesignType(target: object, propertyKey?: string | symbol) {
     return this.get('design:type', target, propertyKey);
   }
 

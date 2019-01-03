@@ -1,12 +1,11 @@
 import { Test, TestingModule } from '@one/testing';
-import { toArrayPromise } from '@one/core';
 
 import { MetadataExplorerService } from '../metadata-explorer.service';
 import { Command, Positional, Option } from '../decorators';
 
 describe('MetadataExplorerService', () => {
   let module: TestingModule;
-  let testCommand: TestCommand;
+  // let testCommand: TestCommand;
   let explorer: MetadataExplorerService;
 
   @Command({ name: 'serve', describe: 'any' })
@@ -19,25 +18,25 @@ describe('MetadataExplorerService', () => {
   beforeEach(async () => {
     module = await Test.createTestingModule({
       providers: [
-        TestCommand,
+        // TestCommand,
         MetadataExplorerService,
       ],
     }).compile();
 
     explorer = module.get(MetadataExplorerService);
-    testCommand = module.get<TestCommand>(TestCommand);
+    // testCommand = module.get<TestCommand>(TestCommand);
   });
 
   describe('scanForPositionals', () => {
-    it('should return properties decorated with @Positional()', async () => {
-      const props = await toArrayPromise(explorer.scanForPositionals(testCommand));
+    it('should return properties decorated with @Positional()', () => {
+      const props = explorer.scanForPositionals(TestCommand.prototype);
       expect(props).toMatchObject(['day']);
     });
   });
 
   describe('scanForOptions', () => {
-    it('should return properties decorated with @Option()', async () => {
-      const props = await toArrayPromise(explorer.scanForOptions(testCommand));
+    it('should return properties decorated with @Option()', () => {
+      const props = explorer.scanForOptions(TestCommand.prototype);
       expect(props).toMatchObject(['port']);
     });
   });

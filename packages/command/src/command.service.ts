@@ -1,25 +1,11 @@
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 import yargs from 'yargs';
-import {
-  Inject,
-  Injectable,
-  OnAppInit,
-  Type,
-  OneContainer,
-  Reflector,
-} from '@one/core';
+import { Inject, Injectable, OnAppInit, OneContainer, Reflector, Type } from '@one/core';
 
 import { MetadataExplorerService } from './metadata-explorer.service';
 import { CLI_TOOLS_OPTIONS } from './cli-tools-options';
 import { COMMAND_META, OPTION_META, POSITIONAL_META } from './tokens';
-import { OptionBuilder, CommandBuilder, PositionalBuilder } from './builders';
-import {
-  CliToolsOptions,
-  PositionalOptions,
-  OptionOptions,
-  CommandOptions,
-} from './interfaces';
+import { Builder, BuilderType, CommandBuilder } from './builders';
+import { CliToolsOptions, CommandOptions, Metadata, OptionOptions, PositionalOptions, RunCommand } from './interfaces';
 
 @Injectable()
 export class CommandService implements OnAppInit {
@@ -35,72 +21,64 @@ export class CommandService implements OnAppInit {
       .filter(injectable => Reflector.has(COMMAND_META, injectable));
   }
 
-  private reflectOptionMetadata(instance: Object, propertyKey: string) {
-    return Reflector.get<OptionOptions>(OPTION_META, instance, propertyKey)!;
+  private reflectOptionMetadata(prototype: object, propertyKey: string) {
+    return Reflector.get<OptionOptions>(OPTION_META, prototype, propertyKey)!;
   }
 
-  private reflectPositionalMetadata(instance: Object, propertyKey: string) {
-    return Reflector.get<PositionalOptions>(POSITIONAL_META, instance, propertyKey)!;
+  private reflectPositionalMetadata(prototype: object, propertyKey: string) {
+    return Reflector.get<PositionalOptions>(POSITIONAL_META, prototype, propertyKey)!;
   }
 
-  private createOptionMetadata(instance: Object): Observable<[string, OptionOptions]> {
-    const options = this.explorer.scanForOptions(instance);
+  private createOptionMetadata(prototype: object): Metadata<OptionOptions>[] {
+    const options = this.explorer.scanForOptions(prototype);
 
-    return options.pipe(
-      map((propertyKey): [string, OptionOptions] => ([
-        propertyKey,
-        this.reflectOptionMetadata(instance, propertyKey),
-      ])),
-    );
+    return options.map(propertyKey => ({
+      metadata: this.reflectOptionMetadata(prototype, propertyKey),
+      propertyKey,
+    }));
   }
 
-  private createPositionalMetadata(instance: Object): Observable<[string, PositionalOptions]> {
-    const positionals = this.explorer.scanForPositionals(instance);
+  private createPositionalMetadata(prototype: object): Metadata<PositionalOptions>[] {
+    const positionals = this.explorer.scanForPositionals(prototype);
 
-    return positionals.pipe(
-      map((propertyKey): [string, PositionalOptions] => ([
-        propertyKey,
-        this.reflectPositionalMetadata(instance, propertyKey),
-      ])),
-    );
+    return positionals.map(propertyKey => ({
+      metadata: this.reflectPositionalMetadata(prototype, propertyKey),
+      propertyKey,
+    }));
   }
 
-  async onAppInit() {
+  onAppInit() {
     const commands = this.getAllCommands();
 
     commands.forEach(command => {
-      const instance = this.container.getProvider(command);
+      const instance = this.container.getProvider<RunCommand>(command);
 
       const commandOptions = Reflector.get<CommandOptions>(COMMAND_META, command)!;
-      const builder = new CommandBuilder(instance, commandOptions);
+      const commandBuilder = new CommandBuilder(instance, commandOptions);
 
-      const positionalMetadata = this.createPositionalMetadata(instance);
-      const optionMetadata = this.createOptionMetadata(instance);
+      const positionalMetadata = this.createPositionalMetadata(command.prototype);
+      const optionMetadata = this.createOptionMetadata(command.prototype);
 
-      const positionalBuilders = positionalMetadata.pipe(
-        map(([key, metadata]) => {
-          return new PositionalBuilder(
-            instance,
-            key,
-            metadata,
-            builder,
-          );
-        }),
-      );
+      const positionalBuilders = positionalMetadata.map(({ propertyKey, metadata }) => {
+        return new Builder<PositionalOptions>(
+          BuilderType.POSITIONAL,
+          propertyKey,
+          metadata,
+        );
+      });
 
-      const optionBuilders = optionMetadata.pipe(
-        map(([key, metadata]) => {
-          return new OptionBuilder(
-            instance,
-            key,
-            metadata,
-            builder,
-          );
-        }),
-      );
+      const optionBuilders = optionMetadata.map(({ propertyKey, metadata }) => {
+        return new Builder<OptionOptions>(
+          BuilderType.OPTION,
+          propertyKey,
+          metadata,
+        );
+      });
 
-      // builder.addPositionals(positionalMetadata);
-      // builder.addOptions(optionMetadata);
+      commandBuilder.add([
+        ...positionalBuilders,
+        ...optionBuilders,
+      ]);
     });
 
     yargs.parse(this.options.args || process.argv);

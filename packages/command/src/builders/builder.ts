@@ -1,14 +1,14 @@
-import { CommandBuilder } from '../builders';
+import { ArgvType } from '../interfaces';
 
-export abstract class Builder<T> {
+export enum BuilderType {
+  POSITIONAL = 'positional',
+  OPTION = 'option',
+}
+
+export class Builder<T extends ArgvType> {
   constructor(
-    protected readonly instance: Object,
-    protected readonly propertyKey: string,
-    protected readonly options: T,
-    protected readonly builder: CommandBuilder,
-  ) {
-    this.add();
-  }
-
-  protected abstract add(): void;
+    public readonly type: BuilderType,
+    public readonly propertyKey: string,
+    public metadata: T,
+  ) {}
 }
