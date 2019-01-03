@@ -1,7 +1,6 @@
 {
   "private": true,
   "scripts": {
-    "precommit": "pretty-quick --staged",
     "commit": "git-cz",
     "lint": "ts-lint -p tsconfig.json -c tslint.json",
     "bootstrap": "lerna bootstrap",
@@ -9,8 +8,7 @@
     "watch": "rollup -w -c node:@zerollup/rollup-preset-ts",
     "publish": "yarn build && lerna publish --conventional-commits --yes",
     "test": "jest",
-    "clean": "rm -rf packages/*/.rpt2_cache packages/*/lib",
-    "pretty-quick": "pretty-quick --no-verify"
+    "clean": "rm -rf packages/*/.rpt2_cache packages/*/lib"
   },
   "devDependencies": {
     "@types/jest": "^23.3.9",
@@ -31,12 +29,7 @@
     "prettier": "^1.15.1",
     "pretty-quick": "^1.8.0",
     "reflect-metadata": "^0.1.12",
-    "rimraf": "^2.6.2",
     "rollup": "^0.67.4",
-    "rollup-plugin-commonjs": "^9.2.0",
-    "rollup-plugin-node-resolve": "^4.0.0",
-    "rollup-plugin-terser": "^4.0.1",
-    "rollup-plugin-typescript2": "^0.18.1",
     "rxjs": "^6.2.2",
     "ts-jest": "23.10.4",
     "ts-node": "^7.0.1",

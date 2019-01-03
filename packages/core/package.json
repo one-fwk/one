@@ -6,6 +6,7 @@
   "typings": "lib/index.d.ts",
   "author": "Marcus S. Abildskov",
   "scripts": {
+    "prepublish": "yarn build",
     "build": "rollup -c node:@zerollup/rollup-preset-ts"
   },
   "license": "MIT",

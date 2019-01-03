@@ -15,7 +15,7 @@ import { HttpService } from './http.service';
   ],
 })
 export class HttpModule {
-  static register(config: AxiosRequestConfig): ModuleWithProviders {
+  static register(config: AxiosRequestConfig): ModuleWithProviders<HttpModule> {
     return {
       module: HttpModule,
       providers: [

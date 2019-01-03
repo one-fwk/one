@@ -5,12 +5,15 @@
   "main": "lib/index.js",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
-  "keywords": [],
   "author": "Marcus S. Abildskov",
   "license": "MIT",
   "dependencies": {
     "@one/core": "*",
     "axios": "*"
+  },
+  "scripts": {
+    "prepublish": "yarn build",
+    "build": "rollup -c node:@zerollup/rollup-preset-ts"
   },
   "files": [
     "lib"
